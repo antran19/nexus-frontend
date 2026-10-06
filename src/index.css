@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #17171a;
+  --color-ink-soft: #232328;
+  --color-gold: #c9a24a;
+  --color-gold-soft: #e3c47d;
+  --color-cream: #f1ede6;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+.story-name {
+  color: rgb(255 255 255 / 0.4);
+  transition: color 0.3s, transform 0.3s;
+}
+
+.story-name.is-active {
+  color: #fff;
+  transform: translateX(-6px);
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Lenis owns smoothing while active; native smooth scrolling would fight it. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
