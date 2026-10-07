@@ -35,9 +35,10 @@ Dùng cho FE tích hợp.
 
 | Vai trò | Có thể làm |
 |---|---|
-| **BUYER** (mặc định khi đăng ký) | Xem mọi thứ công khai, đặt giá đấu giá, gửi yêu cầu lên SELLER |
-| **SELLER** | Như BUYER, cộng thêm: tạo/sửa/xóa sản phẩm và phiên đấu giá **của chính mình** |
-| **ADMIN** | Toàn quyền: quản lý danh mục, duyệt yêu cầu lên SELLER, can thiệp sản phẩm/đấu giá của người khác |
+| **BUYER** (mặc định khi đăng ký) | Xem mọi thứ công khai, đặt giá đấu giá, mua trực tiếp (giỏ hàng/checkout/đơn hàng), gửi yêu cầu lên SELLER |
+| **SELLER** | Như BUYER, cộng thêm: tạo/sửa/xóa sản phẩm và phiên đấu giá **của chính mình**; chỉ xem được đơn hàng, không mua/hủy |
+| **SUPPORT_STAFF** | Xem/hủy mọi đơn hàng, xử lý hoàn tiền; không tự mua hàng |
+| **ADMIN** | Toàn quyền: quản lý danh mục, duyệt yêu cầu lên SELLER, can thiệp sản phẩm/đấu giá/đơn hàng của người khác |
 
 Tài khoản mới đăng ký luôn là **BUYER** — muốn bán hàng phải gửi yêu cầu và chờ ADMIN duyệt
 (mục 2.4).
@@ -231,11 +232,20 @@ Lỗi `403` nếu không phải chủ sản phẩm và không phải ADMIN.
     "startingPrice": 500000.00, "bidIncrement": 50000.00,
     "currentHighestBid": 550000.00, "currentHighestBidderId": "...",
     "status": "ACTIVE", "startTime": "...", "endTime": "...",
-    "extensionCount": 0, "winnerId": null, "finalPrice": null, "paymentDeadline": null
+    "extensionCount": 0, "winnerId": null, "finalPrice": null, "paymentDeadline": null,
+    "paidAt": null
 } }
 ```
 `status`: `PENDING` (chưa tới giờ bắt đầu) → `ACTIVE` (đang diễn ra) → `ENDED` (đã kết thúc,
 có thể có `winnerId`) hoặc `CANCELLED`.
+
+**Thanh toán khi thắng đấu giá không nằm ở `auction-service`** — khi 1 phiên `ENDED` có
+`winnerId`, `commerce-service` tự động tạo 1 Order (nghe event qua Kafka, FE không cần gọi gì
+để "kích hoạt" việc này). FE chờ vài giây rồi gọi `GET /api/v1/orders/me` (mục 6.6) để lấy
+`orderId` tương ứng (field `auctionId` trên Order sẽ khớp với `id` của phiên đấu giá), rồi đi
+tiếp luồng thanh toán ở mục 6.7–6.8 y hệt đơn hàng mua trực tiếp. `paidAt` ở auction chỉ là
+dấu vết nội bộ (auction-service tự cập nhật khi nghe được thanh toán thành công), **không dùng
+để quyết định hiển thị UI** — hãy dùng `status` của Order bên commerce-service.
 
 ### 5.2. Danh sách phiên đấu giá
 
@@ -301,9 +311,126 @@ này cho người dùng thay vì message chung ở `error.message`**.
 
 ---
 
-## 6. Thông báo — Notification (`notification-service`)
+## 6. Mua trực tiếp & Thanh toán — Commerce (`commerce-service`)
 
-### 6.1. Thông báo của tôi
+Luồng e-commerce tiêu chuẩn (ngoài đấu giá): giỏ hàng → checkout → đơn hàng → thanh toán qua
+Stripe. Mỗi buyer chỉ có **1 giỏ hàng** duy nhất (tự tạo khi thêm sản phẩm đầu tiên, không cần
+gọi API "tạo giỏ hàng" riêng).
+
+**Lưu ý quan trọng khi thêm vào giỏ:** `commerce-service` **không** tự tra cứu lại sản phẩm từ
+`catalog-service` — FE phải tự gửi `productId`, `sellerId`, `productName`, `unitPrice` (snapshot
+tại thời điểm thêm vào giỏ, lấy từ `GET /api/v1/products/{id}` mục 4.3). Nếu giá sản phẩm thay
+đổi sau đó, giỏ hàng **không tự cập nhật** — đây là hành vi cố ý (chốt giá tại thời điểm thêm).
+
+### 6.1. Xem giỏ hàng
+
+`GET /api/v1/carts/me` — cần quyền `CART.VIEW` (BUYER)
+
+```json
+{ "success": true, "data": {
+    "id": "...", "buyerId": "...",
+    "items": [ { "productId": "...", "sellerId": "...", "productName": "Vintage Watch",
+                 "unitPrice": 500000.00, "quantity": 1, "subtotal": 500000.00 } ],
+    "totalAmount": 500000.00
+} }
+```
+Buyer chưa có giỏ hàng nào → trả về giỏ rỗng (`items: []`), không phải lỗi 404.
+
+### 6.2. Thêm sản phẩm vào giỏ
+
+`POST /api/v1/carts/items` — cần quyền `CART.CREATE` (BUYER)
+
+```json
+{ "productId": "...", "sellerId": "...", "productName": "Vintage Watch",
+  "unitPrice": 500000, "quantity": 1 }
+```
+Nếu `productId` đã có trong giỏ, `quantity` được **cộng dồn** (không ghi đè). Response trả về
+giỏ hàng đầy đủ sau khi thêm (giống mục 6.1).
+
+### 6.3. Sửa số lượng / Xóa sản phẩm khỏi giỏ
+
+| | Method | Path | Quyền |
+|---|---|---|---|
+| Sửa số lượng | PUT | `/api/v1/carts/items/{productId}` | `CART.UPDATE` |
+| Xóa | DELETE | `/api/v1/carts/items/{productId}` | `CART.REMOVE_ITEM` |
+
+Body sửa số lượng: `{ "quantity": 3 }`. Lỗi `404 CART_ITEM_NOT_FOUND` nếu sản phẩm không có
+trong giỏ.
+
+### 6.4. Checkout (tạo đơn hàng từ giỏ)
+
+`POST /api/v1/checkout` — cần quyền `CHECKOUT.START` (BUYER), không cần body
+
+```json
+{ "success": true, "data": {
+    "id": "...", "buyerId": "...", "auctionId": null,
+    "items": [ { "productId": "...", "sellerId": "...", "productName": "...",
+                 "unitPrice": 500000.00, "quantity": 1, "subtotal": 500000.00 } ],
+    "totalAmount": 500000.00, "status": "AWAITING_PAYMENT",
+    "createdAt": "2026-10-07T...", "paidAt": null
+} }
+```
+Giỏ hàng tự động bị xóa sạch sau khi checkout thành công. Lỗi `409 CART_EMPTY` nếu giỏ rỗng.
+`auctionId` luôn `null` cho đơn hàng loại này (phân biệt với đơn hàng từ đấu giá — xem mục 5.1
+ghi chú về `auctionId`).
+
+### 6.5. Chi tiết 1 đơn hàng
+
+`GET /api/v1/orders/{orderId}` — cần quyền `ORDER.VIEW` (mọi role)
+
+`status`: `AWAITING_PAYMENT` → `PAID` (sau khi thanh toán xong, mục 6.8) hoặc `CANCELLED`
+(mục 6.9).
+
+### 6.6. Danh sách đơn hàng của tôi
+
+`GET /api/v1/orders/me` — cần quyền `ORDER.LIST` (mọi role), trả về mảng `OrderResponse`
+(giống mục 6.5), mới nhất trước. Dùng cái này để tìm đơn hàng tự sinh ra từ 1 phiên đấu giá đã
+thắng (lọc theo field `auctionId`).
+
+### 6.7. Tạo phiên thanh toán Stripe
+
+`POST /api/v1/orders/{orderId}/checkout-session` — cần quyền `CHECKOUT.START`
+
+```json
+// Request
+{ "successUrl": "https://your-fe.app/payment/success", "cancelUrl": "https://your-fe.app/payment/cancel" }
+```
+```json
+// Response
+{ "success": true, "data": { "sessionId": "cs_test_...", "checkoutUrl": "https://checkout.stripe.com/..." } }
+```
+FE điều hướng (redirect) trình duyệt sang `checkoutUrl` để người dùng nhập thẻ trên trang của
+Stripe. Chỉ cho phép khi đơn hàng đang `AWAITING_PAYMENT` và người gọi đúng là buyer của đơn
+(`403 NOT_THE_BUYER` / `409 ORDER_NOT_AWAITING_PAYMENT` nếu sai).
+
+Sau khi thanh toán xong trên Stripe, Stripe tự redirect về `successUrl` kèm query param
+`?session_id=cs_test_...` — FE đọc `session_id` từ URL đó để gọi bước tiếp theo.
+
+### 6.8. Xác nhận thanh toán
+
+`POST /api/v1/orders/{orderId}/confirm-payment` — cần quyền `CHECKOUT.START`
+
+```json
+{ "sessionId": "cs_test_..." }  // lấy từ query param session_id ở successUrl
+```
+Response trả về `OrderResponse` với `status: "PAID"` và `paidAt` đã có giá trị. Gọi lại nhiều
+lần (vd người dùng bấm back rồi vào lại trang success) là an toàn — idempotent, trả về cùng kết
+quả, không thanh toán 2 lần. Lỗi `409 PAYMENT_NOT_CONFIRMED` nếu gọi trước khi Stripe thực sự
+ghi nhận thanh toán xong (hiếm, có thể do mạng chậm — FE nên thử lại sau 1-2 giây).
+
+### 6.9. Hủy đơn hàng
+
+`POST /api/v1/orders/{orderId}/cancel` — cần quyền `ORDER.CANCEL` (BUYER/ADMIN/SUPPORT_STAFF,
+**không có SELLER**)
+
+Chỉ hủy được khi đơn còn `AWAITING_PAYMENT` — đơn đã `PAID` không hủy được qua API này
+(`409 ORDER_NOT_CANCELLABLE`, tính năng hoàn tiền chưa làm ở bản này).
+
+---
+
+## 7. Thông báo — Notification (`notification-service`)
+
+### 7.1. Thông báo của tôi
 
 `GET /api/v1/notifications/me` — cần đăng nhập
 
@@ -315,18 +442,18 @@ này cho người dùng thay vì message chung ở `error.message`**.
 } ] }
 ```
 
-### 6.2. Đánh dấu đã đọc
+### 7.2. Đánh dấu đã đọc
 
 `PATCH /api/v1/notifications/{id}/read` — cần đăng nhập. Không có body, `data: null`.
 
-### 6.3. (Admin) Xem toàn bộ thông báo hệ thống
+### 7.3. (Admin) Xem toàn bộ thông báo hệ thống
 
 `GET /api/v1/notifications?eventType=&aggregateId=` — cần quyền `NOTIFICATION.AUDIT` (chỉ
 ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
 
 ---
 
-## 7. Những điểm FE hay nhầm (đã tự kiểm chứng trong quá trình build)
+## 8. Những điểm FE hay nhầm (đã tự kiểm chứng trong quá trình build)
 
 1. **`response.data` đã là payload thật**, không phải `response.data.data` — axios
    interceptor trong `src/api/client.js` đã tự bóc lớp `{success,data,error}` rồi.
@@ -339,3 +466,10 @@ ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
    duyệt (mục 2.6), không có cách nào tự nâng cấp.
 5. Lỗi đặt giá quá thấp: đọc `error.fieldErrors[0].message` để biết số tiền tối thiểu thật,
    đừng chỉ hiện `error.message` (message đó chỉ nói chung chung "dữ liệu không hợp lệ").
+6. Thắng đấu giá **không tự có nút "Thanh toán" ngay lập tức** — đơn hàng (Order) được
+   `commerce-service` tạo ngầm qua Kafka, có độ trễ vài giây. FE nên poll `GET /api/v1/orders/me`
+   (mục 6.6) vài lần hoặc thêm nút "Kiểm tra đơn hàng" trên trang chi tiết đấu giá đã thắng, thay
+   vì giả định đơn hàng đã có ngay khi `status` chuyển `ENDED`.
+7. Giỏ hàng **không đồng bộ giá với catalog** — `unitPrice` gửi lên khi thêm vào giỏ (mục 6.2)
+   được lưu nguyên vẹn tới lúc checkout, kể cả khi sản phẩm đã đổi giá trên `catalog-service`
+   sau đó. Đây là hành vi đúng, không phải bug.
