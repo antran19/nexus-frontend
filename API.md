@@ -149,9 +149,13 @@ Response 201 trả về rating vừa tạo. Lỗi: `409 CANNOT_RATE_SELF` (tự 
 `score` chạy từ 0-100, mặc định `50` (trung lập) cho user chưa có rating/phạt nào — **không
 phải lỗi 404**. `trustLevel`: `LOW` (score < 40, không được đặt giá đấu giá) / `NORMAL`
 (40-49, được đặt giá nhưng không được tạo đấu giá) / `TRUSTED` (≥ 50, làm được mọi thứ) — khớp
-đúng ngưỡng `MIN_REPUTATION_TO_BID`/`MIN_REPUTATION_TO_SELL` trong SRS. **Lưu ý**: `trustLevel`
-hiện mới mang tính hiển thị, auction-service **chưa** tự chặn đặt giá/tạo đấu giá dựa trên giá
-trị này (cần nhúng vào JWT ở bản sau).
+đúng ngưỡng `MIN_REPUTATION_TO_BID`/`MIN_REPUTATION_TO_SELL` trong SRS.
+
+**`trustLevel` giờ có tác dụng chặn thật** (không chỉ hiển thị nữa) — được nhúng vào JWT ngay
+lúc đăng nhập (mục 2.2), `auction-service` tự đọc từ token để chặn `POST .../bids` và
+`POST /api/v1/auctions`. Vì nhúng vào token lúc login, **điểm cập nhật sau đó không có hiệu lực
+ngay** — phải đăng nhập lại (hoặc đợi token hết hạn, 60 phút) để `trustLevel` mới được áp dụng.
+Lỗi khi bị chặn: `403 INSUFFICIENT_TRUST_TO_BID` / `403 INSUFFICIENT_TRUST_TO_CREATE_AUCTION`.
 
 ### 2.9. (Admin/Support) Lịch sử bị phạt điểm uy tín
 
@@ -522,9 +526,12 @@ ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
 7. Giỏ hàng **không đồng bộ giá với catalog** — `unitPrice` gửi lên khi thêm vào giỏ (mục 6.2)
    được lưu nguyên vẹn tới lúc checkout, kể cả khi sản phẩm đã đổi giá trên `catalog-service`
    sau đó. Đây là hành vi đúng, không phải bug.
-8. Điểm uy tín (mục 2.8) **không chặn hành động thật** ở bản hiện tại — `trustLevel` chỉ để
-   hiển thị, `AUCTION.BID`/`AUCTION.CREATE` chưa bị chặn khi điểm thấp. Đừng FE tự ý ẩn nút
-   "Đặt giá" dựa theo `trustLevel` vì backend vẫn chấp nhận request bình thường.
+8. Điểm uy tín **giờ chặn thật** — nhưng chặn theo `trustLevel` **trong JWT tại thời điểm
+   đăng nhập**, không phải điểm hiện tại. User bị trừ điểm sau khi đã login vẫn đặt giá được
+   bình thường cho tới khi đăng nhập lại/token hết hạn. FE nên bắt lỗi `403
+   INSUFFICIENT_TRUST_TO_BID`/`INSUFFICIENT_TRUST_TO_CREATE_AUCTION` và gợi ý đăng nhập lại,
+   thay vì tự ẩn nút dựa theo `GET .../reputation` (API đó luôn trả điểm mới nhất, có thể lệch
+   với token đang dùng).
 9. Rating (mục 2.7) **không giới hạn theo role đối phương** — BUYER có thể chấm điểm cho một
    BUYER khác (không bắt buộc 1 bên phải là SELLER), miễn không tự chấm cho chính mình và đúng
    `transactionId` thật.
