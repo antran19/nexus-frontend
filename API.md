@@ -35,9 +35,9 @@ Dùng cho FE tích hợp.
 
 | Vai trò | Có thể làm |
 |---|---|
-| **BUYER** (mặc định khi đăng ký) | Xem mọi thứ công khai, đặt giá đấu giá, mua trực tiếp (giỏ hàng/checkout/đơn hàng), gửi yêu cầu lên SELLER |
+| **BUYER** (mặc định khi đăng ký) | Xem mọi thứ công khai, đặt giá đấu giá, mua trực tiếp (giỏ hàng/checkout/đơn hàng), chấm điểm uy tín đối tác, gửi yêu cầu lên SELLER |
 | **SELLER** | Như BUYER, cộng thêm: tạo/sửa/xóa sản phẩm và phiên đấu giá **của chính mình**; chỉ xem được đơn hàng, không mua/hủy |
-| **SUPPORT_STAFF** | Xem/hủy mọi đơn hàng, xử lý hoàn tiền; không tự mua hàng |
+| **SUPPORT_STAFF** | Xem/hủy mọi đơn hàng, xử lý hoàn tiền, xem lịch sử phạt điểm uy tín; không tự mua hàng/chấm điểm |
 | **ADMIN** | Toàn quyền: quản lý danh mục, duyệt yêu cầu lên SELLER, can thiệp sản phẩm/đấu giá/đơn hàng của người khác |
 
 Tài khoản mới đăng ký luôn là **BUYER** — muốn bán hàng phải gửi yêu cầu và chờ ADMIN duyệt
@@ -117,6 +117,55 @@ Lỗi: `409 ALREADY_SELLER` (đã là SELLER/ADMIN) hoặc `409 SELLER_REQUEST_A
 Cả 2 không cần body, cần quyền `USER.REVIEW_SELLER_REQUESTS`. Response giống mục 2.4 nhưng
 `status` = `APPROVED`/`REJECTED`, có `reviewedAt`/`reviewedBy`.
 Lỗi: `409 SELLER_REQUEST_ALREADY_REVIEWED` nếu gọi lại trên yêu cầu đã xử lý.
+
+### 2.7. Đánh giá sau giao dịch (Rating)
+
+`POST /api/v1/ratings` — cần quyền `REPUTATION.RATE` (BUYER/SELLER)
+
+```json
+// Request
+{ "ratedUserId": "...", "transactionType": "ORDER", "transactionId": "order-hoặc-auction-id",
+  "score": 5, "comment": "Giao dịch tốt" }
+```
+`transactionType` nhận `ORDER` hoặc `AUCTION`. FE **tự lấy** `ratedUserId` và `transactionId` từ
+response của Order (mục 6.5) hoặc Auction (mục 5.1) — backend không tự tra lại giao dịch có
+thật hay đã xong chưa, nên gửi sai `ratedUserId`/`transactionId` sẽ không bị chặn ở tầng này.
+`raterId` tự lấy từ token, không gửi lên.
+
+Response 201 trả về rating vừa tạo. Lỗi: `409 CANNOT_RATE_SELF` (tự chấm cho mình),
+`409 RATING_ALREADY_SUBMITTED` (đã chấm giao dịch này rồi — mỗi người chỉ chấm 1 lần/giao dịch),
+`404 USER_NOT_FOUND` (ratedUserId không tồn tại).
+
+### 2.8. Xem điểm uy tín 1 người dùng
+
+`GET /api/v1/users/{userId}/reputation` — cần quyền `REPUTATION.VIEW` (mọi role)
+
+```json
+{ "success": true, "data": {
+    "userId": "...", "score": 54, "trustLevel": "TRUSTED",
+    "totalRatings": 1, "averageRating": 5.0
+} }
+```
+`score` chạy từ 0-100, mặc định `50` (trung lập) cho user chưa có rating/phạt nào — **không
+phải lỗi 404**. `trustLevel`: `LOW` (score < 40, không được đặt giá đấu giá) / `NORMAL`
+(40-49, được đặt giá nhưng không được tạo đấu giá) / `TRUSTED` (≥ 50, làm được mọi thứ) — khớp
+đúng ngưỡng `MIN_REPUTATION_TO_BID`/`MIN_REPUTATION_TO_SELL` trong SRS. **Lưu ý**: `trustLevel`
+hiện mới mang tính hiển thị, auction-service **chưa** tự chặn đặt giá/tạo đấu giá dựa trên giá
+trị này (cần nhúng vào JWT ở bản sau).
+
+### 2.9. (Admin/Support) Lịch sử bị phạt điểm uy tín
+
+`GET /api/v1/users/{userId}/reputation/penalties` — cần quyền `REPUTATION.PENALTY.VIEW`
+(chỉ ADMIN/SUPPORT_STAFF)
+
+```json
+{ "success": true, "data": [ {
+    "id": "...", "userId": "...", "reason": "AUCTION_PAYMENT_TIMEOUT", "points": 10,
+    "referenceId": "<auctionId>", "appliedAt": "2026-10-08T..."
+} ] }
+```
+Hiện chỉ có 1 loại phạt tự động: thắng đấu giá nhưng không thanh toán trong hạn (24h) — hệ
+thống tự trừ 10 điểm, không cần ai thao tác thủ công.
 
 ---
 
@@ -473,3 +522,9 @@ ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
 7. Giỏ hàng **không đồng bộ giá với catalog** — `unitPrice` gửi lên khi thêm vào giỏ (mục 6.2)
    được lưu nguyên vẹn tới lúc checkout, kể cả khi sản phẩm đã đổi giá trên `catalog-service`
    sau đó. Đây là hành vi đúng, không phải bug.
+8. Điểm uy tín (mục 2.8) **không chặn hành động thật** ở bản hiện tại — `trustLevel` chỉ để
+   hiển thị, `AUCTION.BID`/`AUCTION.CREATE` chưa bị chặn khi điểm thấp. Đừng FE tự ý ẩn nút
+   "Đặt giá" dựa theo `trustLevel` vì backend vẫn chấp nhận request bình thường.
+9. Rating (mục 2.7) **không giới hạn theo role đối phương** — BUYER có thể chấm điểm cho một
+   BUYER khác (không bắt buộc 1 bên phải là SELLER), miễn không tự chấm cho chính mình và đúng
+   `transactionId` thật.
