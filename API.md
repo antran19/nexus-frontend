@@ -36,8 +36,8 @@ Dùng cho FE tích hợp.
 | Vai trò | Có thể làm |
 |---|---|
 | **BUYER** (mặc định khi đăng ký) | Xem mọi thứ công khai, đặt giá đấu giá, mua trực tiếp (giỏ hàng/checkout/đơn hàng), chấm điểm uy tín đối tác, gửi yêu cầu lên SELLER |
-| **SELLER** | Như BUYER, cộng thêm: tạo/sửa/xóa sản phẩm và phiên đấu giá **của chính mình**; chỉ xem được đơn hàng, không mua/hủy |
-| **SUPPORT_STAFF** | Xem/hủy mọi đơn hàng, xử lý hoàn tiền, xem lịch sử phạt điểm uy tín; không tự mua hàng/chấm điểm |
+| **SELLER** | Như BUYER, cộng thêm: tạo/sửa/xóa sản phẩm và phiên đấu giá **của chính mình**; xem đơn hàng có sản phẩm của mình và đánh dấu đã giao (mục 6.11), không mua/hủy |
+| **SUPPORT_STAFF** | Xem/hủy mọi đơn hàng, xử lý hoàn tiền và yêu cầu trả hàng (mục 6.12–6.14), xem lịch sử phạt điểm uy tín; không tự mua hàng/chấm điểm |
 | **ADMIN** | Toàn quyền: quản lý danh mục, duyệt yêu cầu lên SELLER, can thiệp sản phẩm/đấu giá/đơn hàng của người khác |
 
 Tài khoản mới đăng ký luôn là **BUYER** — muốn bán hàng phải gửi yêu cầu và chờ ADMIN duyệt
@@ -420,7 +420,7 @@ trong giỏ.
     "items": [ { "productId": "...", "sellerId": "...", "productName": "...",
                  "unitPrice": 500000.00, "quantity": 1, "subtotal": 500000.00 } ],
     "totalAmount": 500000.00, "status": "AWAITING_PAYMENT",
-    "createdAt": "2026-10-07T...", "paidAt": null
+    "createdAt": "2026-10-07T...", "paidAt": null, "shippedAt": null
 } }
 ```
 Giỏ hàng tự động bị xóa sạch sau khi checkout thành công. Lỗi `409 CART_EMPTY` nếu giỏ rỗng.
@@ -432,7 +432,8 @@ ghi chú về `auctionId`).
 `GET /api/v1/orders/{orderId}` — cần quyền `ORDER.VIEW` (mọi role)
 
 `status`: `AWAITING_PAYMENT` → `PAID` (sau khi thanh toán xong, mục 6.8) hoặc `CANCELLED`
-(mục 6.9).
+(mục 6.9). Đơn `PAID` có thể chuyển tiếp sang `REFUNDED` (mục 6.12). Field `shippedAt` là
+`null` cho tới khi seller đánh dấu đã giao (mục 6.11).
 
 ### 6.6. Danh sách đơn hàng của tôi
 
@@ -477,7 +478,83 @@ ghi nhận thanh toán xong (hiếm, có thể do mạng chậm — FE nên th�
 **không có SELLER**)
 
 Chỉ hủy được khi đơn còn `AWAITING_PAYMENT` — đơn đã `PAID` không hủy được qua API này
-(`409 ORDER_NOT_CANCELLABLE`, tính năng hoàn tiền chưa làm ở bản này).
+(`409 ORDER_NOT_CANCELLABLE`). Đơn đã thanh toán muốn lấy lại tiền phải qua hoàn tiền (mục 6.12).
+
+### 6.10. Danh sách tất cả đơn hàng (Admin/Support)
+
+`GET /api/v1/orders` — cần quyền `ORDER.LIST`, **nhưng chỉ ADMIN và SUPPORT_STAFF** được gọi
+(`403 ORDER_LIST_ALL_FORBIDDEN` với role khác). Trả về mảng `OrderResponse` của mọi buyer. User
+thường dùng `GET /api/v1/orders/me` (mục 6.6).
+
+### 6.11. Đơn hàng cần giao (Seller) và đánh dấu đã giao
+
+| | Method | Path | Quyền |
+|---|---|---|---|
+| Danh sách đơn có hàng của tôi | GET | `/api/v1/orders/selling` | `ORDER.LIST` |
+| Đánh dấu đã giao | POST | `/api/v1/orders/{orderId}/mark-shipped` | `ORDER.MARK_SHIPPED` (SELLER, ADMIN) |
+
+`/orders/selling` trả mảng `OrderResponse` của các đơn có ít nhất 1 sản phẩm do chính người gọi
+bán. `mark-shipped` không cần body, trả về `OrderResponse` với `shippedAt` đã có giá trị. Lỗi:
+
+| Mã | Khi nào |
+|---|---|
+| `403 NOT_THE_SELLER` | Người gọi không có sản phẩm nào trong đơn |
+| `409 ORDER_NOT_SHIPPABLE` | Đơn chưa `PAID` (chưa thanh toán, đã hủy hoặc đã hoàn tiền) |
+| `409 ORDER_ALREADY_SHIPPED` | Đơn đã được đánh dấu đã giao trước đó |
+
+Việc đánh dấu này chỉ là cờ xác nhận thủ công (không có đơn vị vận chuyển, không có mã vận
+đơn); nó quyết định luồng hoàn tiền ở mục 6.13.
+
+### 6.12. Hoàn tiền (Admin/Support Staff)
+
+`POST /api/v1/orders/{orderId}/refund` — cần quyền `ORDER.REFUND` (ADMIN, SUPPORT_STAFF)
+
+```json
+{ "reason": "Khách đổi ý" }   // bắt buộc, không được để trống
+```
+Hoàn tiền thật qua Stripe cho đơn `PAID`, response là `OrderResponse` với `status: "REFUNDED"`.
+Gọi lại với đơn đã `REFUNDED` là an toàn (idempotent, trả về cùng kết quả, không hoàn 2 lần).
+Lỗi `409 ORDER_NOT_REFUNDABLE` nếu đơn chưa `PAID` (đang chờ thanh toán hoặc đã hủy).
+
+### 6.13. Hàng sau khi hoàn tiền: nhập lại kho hay phải trả hàng?
+
+Việc hàng có về kho tự động hay không phụ thuộc vào `shippedAt` **tại thời điểm hoàn tiền**:
+
+| Tình huống | Điều xảy ra |
+|---|---|
+| `shippedAt = null` (chưa giao) | Hệ thống **tự nhập lại kho** ngay khi hoàn tiền, không cần làm gì thêm |
+| `shippedAt` đã có (đã giao) | Hàng đang ở chỗ khách, **không** tự nhập kho — cần tạo yêu cầu trả hàng (mục 6.14) và chờ xác nhận nhận lại hàng |
+
+Việc nhập kho chạy bất đồng bộ qua Kafka, nên số lượng tồn có thể cập nhật sau vài giây.
+
+### 6.14. Yêu cầu trả hàng (Admin/Support Staff)
+
+Chỉ áp dụng cho đơn **đã hoàn tiền và đã giao** (mục 6.13). Cả 3 endpoint đều cần quyền
+`ORDER.REFUND` (ADMIN, SUPPORT_STAFF).
+
+| | Method | Path |
+|---|---|---|
+| Tạo yêu cầu trả hàng | POST | `/api/v1/orders/{orderId}/returns` |
+| Xác nhận đã nhận lại hàng | POST | `/api/v1/returns/{returnId}/receive` |
+| Từ chối nhận hàng trả | POST | `/api/v1/returns/{returnId}/reject` |
+
+Body tạo yêu cầu: `{ "reason": "Hàng bị lỗi" }` (bắt buộc). `receive` và `reject` không cần
+body. Response của cả 3 là:
+
+```json
+{ "success": true, "data": {
+    "id": "...", "orderId": "...", "reason": "Hàng bị lỗi",
+    "status": "REQUESTED",            // REQUESTED | RECEIVED | REJECTED
+    "createdAt": "2026-10-13T...", "resolvedAt": null, "resolvedBy": null
+} }
+```
+
+- `receive` đổi trạng thái sang `RECEIVED`, `resolvedAt`/`resolvedBy` được điền, và hàng được
+  nhập lại kho (bất đồng bộ). Gọi lại với yêu cầu đã `RECEIVED` là an toàn (không nhập kho 2 lần).
+- `reject` đổi sang `REJECTED`, **không** nhập kho.
+
+Lỗi khi tạo yêu cầu: `409 RETURN_NOT_APPLICABLE` (đơn chưa hoàn tiền hoặc chưa giao),
+`409 RETURN_ALREADY_REQUESTED` (đơn đã có yêu cầu `REQUESTED` chưa xử lý).
 
 ---
 
