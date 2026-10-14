@@ -556,6 +556,30 @@ body. Response của cả 3 là:
 Lỗi khi tạo yêu cầu: `409 RETURN_NOT_APPLICABLE` (đơn chưa hoàn tiền hoặc chưa giao),
 `409 RETURN_ALREADY_REQUESTED` (đơn đã có yêu cầu `REQUESTED` chưa xử lý).
 
+### 6.15. Hoá đơn của đơn hàng
+
+`GET /api/v1/orders/{orderId}/invoice` — cần quyền `ORDER.VIEW`
+
+```json
+{ "success": true, "data": {
+    "invoiceNumber": "INV-2026-3F9A1C2B",
+    "orderId": "...", "buyerId": "...",
+    "items": [ { "productId": "...", "sellerId": "...", "productName": "Vintage Watch",
+                 "unitPrice": 500000.00, "quantity": 1, "subtotal": 500000.00 } ],
+    "totalAmount": 500000.00,
+    "orderStatus": "PAID",            // PAID | REFUNDED
+    "issuedAt": "2026-10-14T03:00:00Z"   // = thời điểm thanh toán
+} }
+```
+
+- **Ai xem được:** người mua của đơn, seller có sản phẩm trong đơn, và ADMIN/SUPPORT_STAFF.
+  Người khác nhận `403 NOT_ALLOWED_TO_VIEW_INVOICE`.
+- **Khi nào có hoá đơn:** đơn đã thanh toán (`PAID`) hoặc đã hoàn tiền (`REFUNDED`). Đơn chưa
+  thanh toán hoặc đã hủy nhận `409 INVOICE_NOT_AVAILABLE`.
+- **Số hoá đơn:** dạng `INV-<năm thanh toán>-<8 ký tự đầu của orderId>`, tự sinh từ đơn hàng,
+  không lưu riêng nên luôn khớp với đơn.
+- `404 ORDER_NOT_FOUND` nếu đơn không tồn tại.
+
 ---
 
 ## 7. Thông báo — Notification (`notification-service`)
