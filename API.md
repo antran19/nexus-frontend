@@ -484,6 +484,13 @@ lần (vd người dùng bấm back rồi vào lại trang success) là an toàn
 quả, không thanh toán 2 lần. Lỗi `409 PAYMENT_NOT_CONFIRMED` nếu gọi trước khi Stripe thực sự
 ghi nhận thanh toán xong (hiếm, có thể do mạng chậm — FE nên thử lại sau 1-2 giây).
 
+Không cần lo nếu khách tắt tab trước khi về trang success: Stripe tự gọi webhook
+`POST /api/v1/payments/webhook` (chỉ Stripe gọi, FE không dùng) và server vẫn đánh dấu đơn
+`PAID`. Vì vậy khi gọi `confirm-payment` có thể thấy đơn đã `PAID` sẵn, đó là bình thường.
+
+Nếu khách trả tiền lúc đơn **đã bị huỷ** (quá 30 phút hoặc đã bấm huỷ), server tự hoàn tiền và
+đơn chuyển sang `status: "REFUNDED"`. FE nên hiện: "Đơn đã hết hạn, tiền đã được hoàn lại".
+
 ### 6.9. Hủy đơn hàng
 
 `POST /api/v1/orders/{orderId}/cancel` — cần quyền `ORDER.CANCEL` (BUYER/ADMIN/SUPPORT_STAFF,
