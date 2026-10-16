@@ -420,16 +420,22 @@ trong giỏ.
     "items": [ { "productId": "...", "sellerId": "...", "productName": "...",
                  "unitPrice": 500000.00, "quantity": 1, "subtotal": 500000.00 } ],
     "totalAmount": 500000.00, "status": "AWAITING_PAYMENT",
-    "createdAt": "2026-10-07T...", "paidAt": null, "shippedAt": null
+    "createdAt": "2026-10-07T...", "paidAt": null, "shippedAt": null,
+    "shippingAddress": null
 } }
 ```
+Đơn mới tạo **chưa có địa chỉ giao hàng** (`shippingAddress: null`), người mua phải đặt địa chỉ
+ở mục 6.16 trước khi tạo phiên thanh toán (mục 6.7).
 Giỏ hàng tự động bị xóa sạch sau khi checkout thành công. Lỗi `409 CART_EMPTY` nếu giỏ rỗng.
 `auctionId` luôn `null` cho đơn hàng loại này (phân biệt với đơn hàng từ đấu giá — xem mục 5.1
 ghi chú về `auctionId`).
 
 ### 6.5. Chi tiết 1 đơn hàng
 
-`GET /api/v1/orders/{orderId}` — cần quyền `ORDER.VIEW` (mọi role)
+`GET /api/v1/orders/{orderId}` — cần quyền `ORDER.VIEW`. Đơn hàng có địa chỉ và số điện thoại
+của người mua nên **chỉ người mua, seller có sản phẩm trong đơn, ADMIN và SUPPORT_STAFF** xem
+được; người khác nhận `403 NOT_ALLOWED_TO_VIEW_ORDER`. Response có thêm `shippingAddress`
+(xem mục 6.16), là `null` nếu chưa đặt.
 
 `status`: `AWAITING_PAYMENT` → `PAID` (sau khi thanh toán xong, mục 6.8) hoặc `CANCELLED`
 (mục 6.9). Đơn `PAID` có thể chuyển tiếp sang `REFUNDED` (mục 6.12). Field `shippedAt` là
@@ -455,7 +461,8 @@ thắng (lọc theo field `auctionId`).
 ```
 FE điều hướng (redirect) trình duyệt sang `checkoutUrl` để người dùng nhập thẻ trên trang của
 Stripe. Chỉ cho phép khi đơn hàng đang `AWAITING_PAYMENT` và người gọi đúng là buyer của đơn
-(`403 NOT_THE_BUYER` / `409 ORDER_NOT_AWAITING_PAYMENT` nếu sai).
+(`403 NOT_THE_BUYER` / `409 ORDER_NOT_AWAITING_PAYMENT` nếu sai). Đơn chưa có địa chỉ giao hàng
+trả `409 SHIPPING_ADDRESS_REQUIRED`, hãy gọi mục 6.16 trước.
 
 Sau khi thanh toán xong trên Stripe, Stripe tự redirect về `successUrl` kèm query param
 `?session_id=cs_test_...` — FE đọc `session_id` từ URL đó để gọi bước tiếp theo.
@@ -579,6 +586,31 @@ Lỗi khi tạo yêu cầu: `409 RETURN_NOT_APPLICABLE` (đơn chưa hoàn tiề
 - **Số hoá đơn:** dạng `INV-<năm thanh toán>-<8 ký tự đầu của orderId>`, tự sinh từ đơn hàng,
   không lưu riêng nên luôn khớp với đơn.
 - `404 ORDER_NOT_FOUND` nếu đơn không tồn tại.
+
+### 6.16. Địa chỉ giao hàng
+
+`PUT /api/v1/orders/{orderId}/shipping-address` — cần quyền `CHECKOUT.START` (BUYER)
+
+```json
+// Request (cả 4 trường đều bắt buộc)
+{ "recipientName": "Nguyen Van A", "phone": "0901234567",
+  "addressLine": "12 Le Loi, Phuong Ben Nghe, Quan 1", "city": "Ho Chi Minh" }
+```
+Response là `OrderResponse` (mục 6.5) với `shippingAddress` đã có giá trị:
+
+```json
+"shippingAddress": { "recipientName": "Nguyen Van A", "phone": "0901234567",
+                     "addressLine": "12 Le Loi, Phuong Ben Nghe, Quan 1", "city": "Ho Chi Minh" }
+```
+
+- Dùng cho **cả đơn mua trực tiếp lẫn đơn tạo từ đấu giá** (người thắng chưa có địa chỉ, cần đặt
+  trước khi thanh toán).
+- Gọi lại để **sửa địa chỉ** được, miễn là đơn còn `AWAITING_PAYMENT`. Đơn đã thanh toán, hủy
+  hoặc hoàn tiền nhận `409 ORDER_NOT_AWAITING_PAYMENT`.
+- Số điện thoại 8 đến 15 chữ số (có thể bắt đầu bằng `+`, khoảng trắng, dấu chấm và gạch ngang
+  được bỏ đi). Trường rỗng hoặc quá dài trả `400` kèm `fieldErrors`. Người gọi không phải buyer
+  của đơn nhận `403 NOT_THE_BUYER`.
+- **Seller** thấy địa chỉ này trong `GET /api/v1/orders/selling` (mục 6.11) để biết giao đi đâu.
 
 ---
 
