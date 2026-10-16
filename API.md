@@ -237,6 +237,8 @@ kiếm, gọi thẳng vào path gốc.
     "skuId": "...", "skuCode": "SKU-XXXX", "price": 500000.00
 } }
 ```
+**Cẩn thận hai mã:** `id` là mã **sản phẩm**, `skuId` là mã SKU riêng của catalog. **Tồn kho và
+mua hàng đều tính theo `id` (mã sản phẩm), không phải `skuId`** (mục 6.17).
 
 ### 4.4. Tạo sản phẩm
 
@@ -250,9 +252,12 @@ token, FE **không** gửi field này lên.
   "description": "...",
   "categoryId": "...",
   "price": 500000,
-  "imageUrls": ["https://..."]
+  "imageUrls": ["https://..."],
+  "initialStock": 20
 }
 ```
+`initialStock` (số lượng đang có, tuỳ chọn, mặc định 0, từ 0 đến 1.000.000) sẽ mở tồn kho cho
+sản phẩm. Muốn người mua đặt được hàng thì tồn kho phải lớn hơn 0, nhập thêm ở mục 6.17.
 Response 201, sản phẩm mới luôn có `status: "DRAFT"` (chưa hiện công khai).
 
 ### 4.5. Sửa sản phẩm / Đổi trạng thái / Xóa
@@ -612,6 +617,36 @@ Response là `OrderResponse` (mục 6.5) với `shippingAddress` đã có giá t
   của đơn nhận `403 NOT_THE_BUYER`.
 - **Seller** thấy địa chỉ này trong `GET /api/v1/orders/selling` (mục 6.11) để biết giao đi đâu.
 
+### 6.17. Tồn kho (`fulfillment-service`)
+
+Tồn kho tính theo **mã sản phẩm** (`id` ở mục 4.3), không phải `skuId`. Tồn kho của sản phẩm tự
+được mở khi tạo sản phẩm (qua `initialStock`, mục 4.4); người bán nhập thêm ở đây. Thiếu hàng thì
+đơn bị hủy lúc đặt.
+
+| | Method | Path | Quyền |
+|---|---|---|---|
+| Xem tồn kho | GET | `/api/v1/inventory/{productId}` | `INVENTORY.VIEW` (Admin, Seller, Support) |
+| Người bán nhập thêm | POST | `/api/v1/inventory/{productId}/restock` | `INVENTORY.RESTOCK` (Seller, Admin) |
+| Admin nhập kho (bất kỳ sản phẩm) | POST | `/api/v1/inventory/intake` | `INVENTORY.MANAGE` (Admin) |
+
+```json
+// Nhập thêm (Seller / Admin)
+{ "quantity": 10 }                       // 1 đến 1.000.000
+// Nhập kho (Admin)
+{ "productId": "...", "quantity": 10 }
+// Response của xem tồn kho và nhập thêm
+{ "success": true, "data": {
+    "productId": "...", "warehouseId": "MAIN",
+    "totalQuantity": 30, "reservedQuantity": 2, "unavailableQuantity": 0, "availableQuantity": 28
+} }
+```
+- `availableQuantity` = tổng trừ số đang giữ cho các đơn chưa thanh toán.
+- **Người bán chỉ nhập thêm được cho sản phẩm của chính mình**, người khác nhận
+  `403 NOT_THE_PRODUCT_OWNER`. Admin nhập được mọi sản phẩm.
+- Sản phẩm chưa từng được nhập kho vẫn trả về tồn kho bằng 0, không phải 404.
+- Sản phẩm tạo trước khi có tính năng này chưa có chủ kho nên người bán chưa nhập thêm được; nhờ
+  Admin nhập kho giúp.
+
 ---
 
 ## 7. Thông báo — Notification (`notification-service`)
@@ -668,3 +703,5 @@ ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
 9. Rating (mục 2.7) **không giới hạn theo role đối phương** — BUYER có thể chấm điểm cho một
    BUYER khác (không bắt buộc 1 bên phải là SELLER), miễn không tự chấm cho chính mình và đúng
    `transactionId` thật.
+10. **Tồn kho theo `id` sản phẩm, không phải `skuId`.** Response sản phẩm có cả hai mã; dùng
+   nhầm `skuId` để nhập kho thì đơn đặt hàng sẽ báo hết hàng dù kho có hàng. Xem mục 6.17.
