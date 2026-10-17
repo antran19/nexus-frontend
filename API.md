@@ -407,6 +407,10 @@ Nếu `productId` đã có trong giỏ, `quantity` được **cộng dồn** (kh
 giỏ hàng đầy đủ sau khi thêm (giống mục 6.1), giá trong đó là giá thật của sản phẩm.
 Lỗi `409 PRODUCT_NOT_AVAILABLE` nếu sản phẩm không tồn tại, chưa/không còn `ACTIVE` (DRAFT,
 INACTIVE, SOLD), hoặc vừa mở bán chưa tới vài giây.
+Lỗi `409 INSUFFICIENT_STOCK` nếu (số đã có trong giỏ + `quantity`) vượt số còn bán; message có
+dạng `Only 5 left of product <id>, requested 6`, FE có thể hiện "chỉ còn 5". Số tồn kho mà
+commerce dùng trễ vài giây so với kho thật, nên đây là báo sớm: hiếm khi hai người cùng mua
+món cuối, một đơn vẫn có thể bị huỷ sau vài giây vì hết hàng (`OrderCancelled`, mục 6.4).
 
 ### 6.3. Sửa số lượng / Xóa sản phẩm khỏi giỏ
 
@@ -416,7 +420,7 @@ INACTIVE, SOLD), hoặc vừa mở bán chưa tới vài giây.
 | Xóa | DELETE | `/api/v1/carts/items/{productId}` | `CART.REMOVE_ITEM` |
 
 Body sửa số lượng: `{ "quantity": 3 }`. Lỗi `404 CART_ITEM_NOT_FOUND` nếu sản phẩm không có
-trong giỏ.
+trong giỏ, `409 INSUFFICIENT_STOCK` nếu số lượng mới vượt số còn bán.
 
 ### 6.4. Checkout (tạo đơn hàng từ giỏ)
 
@@ -438,6 +442,8 @@ Giỏ hàng tự động bị xóa sạch sau khi checkout thành công. Lỗi `
 Lúc checkout giá được **tính lại** theo giá hiện tại của sản phẩm. Nếu có sản phẩm trong giỏ không
 còn bán (người bán tắt, đã SOLD...) thì trả `409 CART_ITEM_UNAVAILABLE` (message có `productId`),
 **giỏ được giữ nguyên**; FE nên báo người mua bỏ sản phẩm đó khỏi giỏ (mục 6.3) rồi checkout lại.
+Tương tự, `409 INSUFFICIENT_STOCK` nếu kho đã tụt dưới số lượng trong giỏ (người khác vừa mua):
+giỏ giữ nguyên, FE cho người mua giảm số lượng (mục 6.3).
 `auctionId` luôn `null` cho đơn hàng loại này (phân biệt với đơn hàng từ đấu giá — xem mục 5.1
 ghi chú về `auctionId`).
 
