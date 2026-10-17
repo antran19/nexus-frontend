@@ -375,10 +375,12 @@ Luồng e-commerce tiêu chuẩn (ngoài đấu giá): giỏ hàng → checkout 
 Stripe. Mỗi buyer chỉ có **1 giỏ hàng** duy nhất (tự tạo khi thêm sản phẩm đầu tiên, không cần
 gọi API "tạo giỏ hàng" riêng).
 
-**Lưu ý quan trọng khi thêm vào giỏ:** `commerce-service` **không** tự tra cứu lại sản phẩm từ
-`catalog-service` — FE phải tự gửi `productId`, `sellerId`, `productName`, `unitPrice` (snapshot
-tại thời điểm thêm vào giỏ, lấy từ `GET /api/v1/products/{id}` mục 4.3). Nếu giá sản phẩm thay
-đổi sau đó, giỏ hàng **không tự cập nhật** — đây là hành vi cố ý (chốt giá tại thời điểm thêm).
+**Lưu ý quan trọng khi thêm vào giỏ (đổi từ 2026-10-17):** FE chỉ gửi `productId` và `quantity`.
+Giá, tên và người bán do `commerce-service` tự lấy từ bản sao thông tin sản phẩm của nó (cập nhật
+qua sự kiện từ `catalog-service`); `sellerId`/`productName`/`unitPrice` nếu FE vẫn gửi thì bị
+**bỏ qua**. Chỉ thêm được sản phẩm đang `ACTIVE`. Sản phẩm vừa chuyển sang `ACTIVE` cần **vài giây**
+(thường dưới 5 giây) mới mua được, trước đó trả `409 PRODUCT_NOT_AVAILABLE`. Sản phẩm tạo trước
+2026-10-17 không có bản sao nên không thêm vào giỏ được.
 
 ### 6.1. Xem giỏ hàng
 
@@ -399,11 +401,12 @@ Buyer chưa có giỏ hàng nào → trả về giỏ rỗng (`items: []`), khô
 `POST /api/v1/carts/items` — cần quyền `CART.CREATE` (BUYER)
 
 ```json
-{ "productId": "...", "sellerId": "...", "productName": "Vintage Watch",
-  "unitPrice": 500000, "quantity": 1 }
+{ "productId": "...", "quantity": 1 }
 ```
 Nếu `productId` đã có trong giỏ, `quantity` được **cộng dồn** (không ghi đè). Response trả về
-giỏ hàng đầy đủ sau khi thêm (giống mục 6.1).
+giỏ hàng đầy đủ sau khi thêm (giống mục 6.1), giá trong đó là giá thật của sản phẩm.
+Lỗi `409 PRODUCT_NOT_AVAILABLE` nếu sản phẩm không tồn tại, chưa/không còn `ACTIVE` (DRAFT,
+INACTIVE, SOLD), hoặc vừa mở bán chưa tới vài giây.
 
 ### 6.3. Sửa số lượng / Xóa sản phẩm khỏi giỏ
 
@@ -432,6 +435,9 @@ trong giỏ.
 Đơn mới tạo **chưa có địa chỉ giao hàng** (`shippingAddress: null`), người mua phải đặt địa chỉ
 ở mục 6.16 trước khi tạo phiên thanh toán (mục 6.7).
 Giỏ hàng tự động bị xóa sạch sau khi checkout thành công. Lỗi `409 CART_EMPTY` nếu giỏ rỗng.
+Lúc checkout giá được **tính lại** theo giá hiện tại của sản phẩm. Nếu có sản phẩm trong giỏ không
+còn bán (người bán tắt, đã SOLD...) thì trả `409 CART_ITEM_UNAVAILABLE` (message có `productId`),
+**giỏ được giữ nguyên**; FE nên báo người mua bỏ sản phẩm đó khỏi giỏ (mục 6.3) rồi checkout lại.
 `auctionId` luôn `null` cho đơn hàng loại này (phân biệt với đơn hàng từ đấu giá — xem mục 5.1
 ghi chú về `auctionId`).
 
