@@ -328,6 +328,12 @@ Phiên mới luôn bắt đầu ở `status: "PENDING"` — có 1 job chạy ng�
 `PENDING → ACTIVE` khi tới `startTime`, và `ACTIVE → ENDED` khi tới `endTime`. FE không cần tự
 chuyển trạng thái.
 Lỗi `409 TOO_MANY_ACTIVE_AUCTIONS` nếu seller đang có ≥ 5 phiên PENDING/ACTIVE cùng lúc.
+Từ 2026-10-17 sản phẩm phải **của chính seller, đang `ACTIVE` và còn ít nhất 1 trong kho**:
+`403 NOT_THE_PRODUCT_OWNER` nếu là sản phẩm của người khác; `409 PRODUCT_NOT_AVAILABLE` nếu sản
+phẩm không tồn tại hoặc chưa/không còn `ACTIVE`; `409 INSUFFICIENT_STOCK` nếu kho bằng 0 (nhập
+kho ở mục nhập kho rồi thử lại). Sản phẩm vừa chuyển `ACTIVE` hoặc vừa nhập kho cần **vài giây**
+mới tạo phiên được. Kho **không bị giữ** trong suốt phiên: nếu món cuối được bán qua giỏ hàng khi
+phiên đang chạy, đơn của người thắng sẽ tự huỷ vì hết hàng (người thắng không bị trừ uy tín).
 
 ### 5.4. Sửa / Hủy phiên đấu giá
 
