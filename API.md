@@ -332,8 +332,12 @@ Từ 2026-10-17 sản phẩm phải **của chính seller, đang `ACTIVE` và c�
 `403 NOT_THE_PRODUCT_OWNER` nếu là sản phẩm của người khác; `409 PRODUCT_NOT_AVAILABLE` nếu sản
 phẩm không tồn tại hoặc chưa/không còn `ACTIVE`; `409 INSUFFICIENT_STOCK` nếu kho bằng 0 (nhập
 kho ở mục nhập kho rồi thử lại). Sản phẩm vừa chuyển `ACTIVE` hoặc vừa nhập kho cần **vài giây**
-mới tạo phiên được. Kho **không bị giữ** trong suốt phiên: nếu món cuối được bán qua giỏ hàng khi
-phiên đang chạy, đơn của người thắng sẽ tự huỷ vì hết hàng (người thắng không bị trừ uy tín).
+mới tạo phiên được. Từ lúc tạo phiên, **1 cái được giữ riêng cho phiên** (không ai mua thẳng được,
+thêm giỏ báo `409 INSUFFICIENT_STOCK`); không ai đặt giá hoặc phiên bị huỷ → trả lại kho; người
+thắng trả tiền → trừ kho. Hiếm khi kho vừa hết đúng lúc tạo phiên (số tồn kho của auction trễ vài
+giây): phiên được tạo nhưng vài giây sau tự chuyển `CANCELLED` (`cancelledBy: "SYSTEM"`), FE nên
+tải lại trạng thái phiên. Người thắng bỏ cọc (tự huỷ đơn hoặc quá 24h) → sản phẩm từ `SOLD` về
+lại `ACTIVE`, seller bán tiếp hoặc tạo phiên mới được; đơn còn treo bị huỷ (`PAYMENT_TIMEOUT`).
 
 ### 5.4. Sửa / Hủy phiên đấu giá
 
