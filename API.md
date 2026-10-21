@@ -436,6 +436,13 @@ trong giỏ, `409 INSUFFICIENT_STOCK` nếu số lượng mới vượt số cò
 
 `POST /api/v1/checkout` — cần quyền `CHECKOUT.START` (BUYER), không cần body
 
+**Header tuỳ chọn `Idempotency-Key`** (chuỗi tối đa 100 ký tự, FE tự tạo, ví dụ `crypto.randomUUID()`):
+tạo **một lần** khi người dùng mở trang thanh toán và gửi lại **đúng mã đó** nếu phải gọi lại (bấm
+lần hai, mạng chậm, tự thử lại). Server trả **lại đúng đơn đã tạo** ở lần đầu, không tạo đơn thứ hai.
+Không gửi header thì vẫn chạy như cũ; khi bấm hai lần liền, lần sau nhận `409 CART_EMPTY`. Mã chỉ
+được nhớ 24 giờ và tính riêng cho từng người mua. Mã dài quá 100 ký tự → `400 VALIDATION_ERROR`.
+Hai request cùng lúc luôn chỉ tạo tối đa **một** đơn, dù có gửi mã hay không.
+
 ```json
 { "success": true, "data": {
     "id": "...", "buyerId": "...", "auctionId": null,
