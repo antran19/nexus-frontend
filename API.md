@@ -53,13 +53,20 @@ Tài khoản mới đăng ký luôn là **BUYER** — muốn bán hàng phải g
 
 ```json
 // Request
-{ "email": "a@b.com", "password": "ít nhất 6 ký tự", "fullName": "Nguyễn Văn A" }
+{ "email": "a@b.com", "password": "8 đến 72 ký tự", "confirmPassword": "nhập lại đúng mật khẩu trên", "fullName": "Nguyễn Văn A" }
 ```
 ```json
 // Response 201
 { "success": true, "data": { "id": "...", "email": "a@b.com", "fullName": "Nguyễn Văn A" } }
 ```
 Lỗi: `409 EMAIL_ALREADY_REGISTERED` nếu email đã tồn tại.
+
+Lỗi `400 VALIDATION_ERROR` kèm `error.fieldErrors` (`field` + `message`), mỗi lỗi ở đúng ô nhập:
+- `password`: ngoài khoảng 8 đến 72 ký tự (72 là giới hạn của BCrypt).
+- `confirmPassword`: thiếu, hoặc **không giống hệt** `password` (phân biệt hoa thường, có tính khoảng trắng).
+- `email`, `fullName`: tối đa 255 ký tự.
+
+FE vẫn nên tự kiểm hai ô mật khẩu trước khi gửi để báo lỗi ngay, nhưng server kiểm lại.
 
 ### 2.2. Đăng nhập
 
@@ -84,9 +91,13 @@ chỉ cần đính kèm nguyên token vào header.
 
 ```json
 // Request
-{ "oldPassword": "...", "newPassword": "..." }
+{ "oldPassword": "...", "newPassword": "8 đến 72 ký tự", "confirmNewPassword": "nhập lại newPassword" }
 ```
-Response 200, `data: null`. Lỗi: `401` nếu `oldPassword` sai.
+Response 200, `data: null`. Lỗi: `401` nếu `oldPassword` sai; `400` nếu `newPassword` ngoài 8 đến 72 ký tự
+hoặc `confirmNewPassword` khác `newPassword` (lỗi gắn vào `confirmNewPassword`).
+
+Đặt lại mật khẩu sau khi quên (`POST /api/v1/auth/reset-password`, body `token`, `newPassword`,
+`confirmNewPassword`) dùng cùng quy tắc.
 
 ### 2.4. Yêu cầu trở thành người bán
 

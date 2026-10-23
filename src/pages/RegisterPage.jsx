@@ -15,8 +15,8 @@ export default function RegisterPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       return 'Email không đúng định dạng'
     }
-    if (form.password.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự'
+    if (form.password.length < 8 || form.password.length > 72) {
+      return 'Mật khẩu phải có từ 8 đến 72 ký tự'
     }
     if (form.password !== form.confirmPassword) {
       return 'Mật khẩu xác nhận không khớp'
@@ -38,7 +38,9 @@ export default function RegisterPage() {
       await register(form)
       navigate('/login')
     } catch (err) {
-      const message = err.response?.data?.error?.message
+      // A 400 carries the rule that failed per field; show it instead of the generic message.
+      const apiError = err.response?.data?.error
+      const message = apiError?.fieldErrors?.[0]?.message || apiError?.message
       setError(
         err.response?.status === 409
           ? 'Email đã được sử dụng'
