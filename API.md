@@ -139,13 +139,23 @@ Lỗi: `409 SELLER_REQUEST_ALREADY_REVIEWED` nếu gọi lại trên yêu cầu 
   "score": 5, "comment": "Giao dịch tốt" }
 ```
 `transactionType` nhận `ORDER` hoặc `AUCTION`. FE **tự lấy** `ratedUserId` và `transactionId` từ
-response của Order (mục 6.5) hoặc Auction (mục 5.1) — backend không tự tra lại giao dịch có
-thật hay đã xong chưa, nên gửi sai `ratedUserId`/`transactionId` sẽ không bị chặn ở tầng này.
-`raterId` tự lấy từ token, không gửi lên.
+response của Order (mục 6.5) hoặc Auction (mục 5.1). `raterId` tự lấy từ token, không gửi lên.
 
-Response 201 trả về rating vừa tạo. Lỗi: `409 CANNOT_RATE_SELF` (tự chấm cho mình),
-`409 RATING_ALREADY_SUBMITTED` (đã chấm giao dịch này rồi — mỗi người chỉ chấm 1 lần/giao dịch),
-`404 USER_NOT_FOUND` (ratedUserId không tồn tại).
+**Chỉ chấm được giao dịch có thật, sau khi người bán đã bấm "đã giao" (mục 6.11)**, và chỉ giữa hai
+bên của giao dịch đó: người mua chấm người bán, hoặc người bán chấm người mua. Với đơn mua từ đấu giá,
+`transactionId` có thể là mã đơn (`ORDER`) hoặc mã phiên đấu giá (`AUCTION`), cả hai đều được.
+Đơn có nhiều người bán chỉ ghi nhận **người bán đã bấm "đã giao"** (đơn chỉ có một `shippedAt`), nên
+chỉ người đó chấm và được chấm.
+
+Response 201 trả về rating vừa tạo. Lỗi:
+- `409 CANNOT_RATE_SELF`: tự chấm cho mình.
+- `404 USER_NOT_FOUND`: `ratedUserId` không tồn tại.
+- `404 TRANSACTION_NOT_FOUND`: không có giao dịch đã giao với mã này (mã bịa, đơn chưa giao, hoặc sai
+  `transactionType`). Người bán vừa bấm "đã giao" thì có thể mất vài giây để hệ thống ghi nhận, FE nên
+  thử lại sau 1 đến 2 giây trước khi báo lỗi.
+- `403 NOT_A_PARTICIPANT`: người chấm không phải một trong hai bên, hoặc `ratedUserId` không phải bên
+  còn lại của giao dịch.
+- `409 RATING_ALREADY_SUBMITTED`: đã chấm giao dịch này rồi (mỗi người chỉ chấm 1 lần/giao dịch).
 
 ### 2.8. Xem điểm uy tín 1 người dùng
 
