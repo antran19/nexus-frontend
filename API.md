@@ -519,6 +519,13 @@ Stripe. Chỉ cho phép khi đơn hàng đang `AWAITING_PAYMENT` và người g�
 (`403 NOT_THE_BUYER` / `409 ORDER_NOT_AWAITING_PAYMENT` nếu sai). Đơn chưa có địa chỉ giao hàng
 trả `409 SHIPPING_ADDRESS_REQUIRED`, hãy gọi mục 6.16 trước.
 
+`successUrl` và `cancelUrl` **phải nằm trên địa chỉ của chính website** (scheme + tên miền + cổng).
+Mặc định server nhận `http://localhost:5173` và `http://localhost:3000`; khi triển khai thật phải
+cấu hình `nexus.checkout.allowed-redirect-origins` thành địa chỉ FE thật. Địa chỉ ngoài danh sách (kể
+cả dạng giả như `http://localhost:5173.evil.com` hay `http://localhost:5173@evil.com`) bị
+`400 VALIDATION_ERROR` kèm `fieldErrors` đúng ô (`successUrl` hoặc `cancelUrl`). Lý do: nếu không, kẻ
+xấu có thể đưa người mua sang một trang giả ngay sau khi trả tiền thật.
+
 Sau khi thanh toán xong trên Stripe, Stripe tự redirect về `successUrl` kèm query param
 `?session_id=cs_test_...` — FE đọc `session_id` từ URL đó để gọi bước tiếp theo.
 
