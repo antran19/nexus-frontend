@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getAuctionsByProduct, getBidHistory, placeBid } from '../api/auctions'
+import { addToCart } from '../api/cart'
 import { getProductById } from '../api/products'
 import { useAuth } from '../context/AuthContext'
+import { resolveProductImage } from '../utils/images'
 
 const STATUS_LABEL = {
   PENDING: 'Chưa bắt đầu',
@@ -27,6 +29,10 @@ export default function ProductDetailPage() {
   const [bidAmount, setBidAmount] = useState('')
   const [bidError, setBidError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [cartQuantity, setCartQuantity] = useState(1)
+  const [addingToCart, setAddingToCart] = useState(false)
+  const [cartSuccess, setCartSuccess] = useState(false)
+  const [cartError, setCartError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -76,20 +82,95 @@ export default function ProductDetailPage() {
     }
   }
 
+  async function handleAddToCart() {
+    setAddingToCart(true)
+    setCartError('')
+    setCartSuccess(false)
+    try {
+      await addToCart(product.id, Number(cartQuantity))
+      setCartSuccess(true)
+    } catch (err) {
+      const apiError = err.response?.data?.error
+      const message =
+        apiError?.code === 'INSUFFICIENT_STOCK'
+          ? 'Số lượng sản phẩm trong kho không đủ.'
+          : apiError?.message || 'Không thể thêm sản phẩm vào giỏ.'
+      setCartError(message)
+    } finally {
+      setAddingToCart(false)
+    }
+  }
+
   if (loading) return <p className="text-sm text-gray-500 px-4 py-8">Đang tải...</p>
   if (!product) return <p className="text-sm text-gray-500 px-4 py-8">Không tìm thấy sản phẩm.</p>
 
+  const mainImage = product.imageUrls?.[0] || resolveProductImage(product)
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-8">
-      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-        {product.imageUrls?.[0] && (
-          <img src={product.imageUrls[0]} alt={product.name} className="w-full h-full object-cover" />
-        )}
+      <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200/80 shadow-sm">
+        <img
+          src={mainImage}
+          alt={product.name}
+          onError={(e) => {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = '/images/scenes/watch.jpg'
+          }}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">{product.name}</h1>
         <p className="text-gray-600 mt-2">{product.description}</p>
+
+        {product.price != null && (
+          <div className="mt-6 border-t border-b border-gray-200 py-4">
+            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Mua trực tiếp</p>
+            <p className="text-3xl font-semibold text-gray-900 mt-1">
+              {Number(product.price).toLocaleString('vi-VN')} đ
+            </p>
+
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                state={{ from: location.pathname }}
+                className="inline-block mt-3 text-sm text-gray-900 underline"
+              >
+                Đăng nhập để mua hàng
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3 mt-4">
+                <input
+                  type="number"
+                  min="1"
+                  value={cartQuantity}
+                  onChange={(e) => setCartQuantity(Math.max(1, Number(e.target.value)))}
+                  className="border border-gray-300 rounded px-3 py-2 w-20 text-sm text-center"
+                />
+                <button
+                  type="button"
+                  disabled={addingToCart}
+                  onClick={handleAddToCart}
+                  className="bg-gray-900 text-white text-sm font-medium rounded px-5 py-2 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                >
+                  {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
+                </button>
+              </div>
+            )}
+
+            {cartSuccess && (
+              <p className="text-xs text-green-700 mt-2">
+                Đã thêm sản phẩm vào giỏ.{' '}
+                <Link to="/cart" className="underline font-semibold ml-1">
+                  Xem giỏ hàng
+                </Link>
+              </p>
+            )}
+
+            {cartError && <p className="text-xs text-red-600 mt-2">{cartError}</p>}
+          </div>
+        )}
 
         {!auction ? (
           <p className="text-sm text-gray-500 mt-6">Sản phẩm này chưa có phiên đấu giá nào.</p>

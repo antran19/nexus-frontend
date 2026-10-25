@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Header from './components/Header'
 import PrivateRoute from './components/PrivateRoute'
 import { AuthProvider } from './context/AuthContext'
+import CartPage from './pages/CartPage'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -24,6 +25,7 @@ export default function App() {
 
           <Route element={<PrivateRoute />}>
             <Route path="/me" element={<ProfilePage />} />
+            <Route path="/cart" element={<CartPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

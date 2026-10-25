@@ -66,6 +66,9 @@ export default function Header() {
 
         {isAuthenticated ? (
           <>
+            <Link to="/cart" className={linkClass}>
+              Giỏ hàng
+            </Link>
             <span className={linkClass}>{user?.sub ?? 'Tài khoản'}</span>
             <button onClick={handleLogout} className={buttonClass}>
               Đăng xuất
