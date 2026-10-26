@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getCart, removeCartItem, updateCartItem } from '../api/cart'
 import { resolveProductImage } from '../utils/images'
 
 export default function CartPage() {
+  const navigate = useNavigate()
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState(null)
@@ -200,6 +201,7 @@ export default function CartPage() {
 
             <button
               type="button"
+              onClick={() => navigate('/checkout')}
               className="w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
             >
               Tiến hành đặt hàng
