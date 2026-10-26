@@ -31,6 +31,22 @@ Dùng cho FE tích hợp.
 | 404 | Không tìm thấy resource |
 | 409 | Xung đột nghiệp vụ (vd email đã tồn tại, đặt giá quá thấp, request đã duyệt rồi) |
 
+### Mã lỗi `error.code` hay gặp ở nhiều màn hình
+
+| HTTP | `error.code` | Ý nghĩa |
+|---|---|---|
+| 401 | `INVALID_CREDENTIALS` | Sai email hoặc mật khẩu khi đăng nhập |
+| 401 | `INVALID_RESET_TOKEN` | Mã đặt lại mật khẩu sai, hết hạn hoặc đã dùng |
+| 401 | `INVALID_WEBHOOK_SIGNATURE` | Chỉ Stripe gọi webhook; chữ ký sai (FE không gặp) |
+| 404 | `PRODUCT_NOT_FOUND` | Không có sản phẩm với `id` đó |
+| 404 | `CATEGORY_NOT_FOUND` | Không có danh mục với `id` đó |
+| 404 | `AUCTION_NOT_FOUND` | Không có phiên đấu giá với `id` đó |
+| 404 | `RESERVATION_NOT_FOUND` | Không có phần giữ kho với mã đó |
+| 404 | `RETURN_REQUEST_NOT_FOUND` | Không có yêu cầu trả hàng với `id` đó |
+| 409 | `CATEGORY_HAS_CHILDREN` | Xóa danh mục còn danh mục con |
+| 409 | `CATEGORY_HAS_PRODUCTS` | Xóa danh mục còn sản phẩm |
+| 409 | `INSUFFICIENT_INVENTORY` | Kho không đủ để giữ hàng (khác `INSUFFICIENT_STOCK` ở giỏ hàng, mục 6.2) |
+
 ### Quyền (privilege) theo vai trò
 
 | Vai trò | Có thể làm |
@@ -99,6 +115,9 @@ hoặc `confirmNewPassword` khác `newPassword` (lỗi gắn vào `confirmNewPas
 Đặt lại mật khẩu sau khi quên (`POST /api/v1/auth/reset-password`, body `token`, `newPassword`,
 `confirmNewPassword`) dùng cùng quy tắc.
 
+Quên mật khẩu: `POST /api/v1/auth/forgot-password`, body `{ "email": "..." }`. Lỗi `404 EMAIL_NOT_FOUND`
+nếu không có tài khoản nào dùng email đó.
+
 ### 2.4. Yêu cầu trở thành người bán
 
 `POST /api/v1/users/me/seller-requests` — cần đăng nhập (bất kỳ ai, không cần quyền đặc biệt)
@@ -127,7 +146,8 @@ Lỗi: `409 ALREADY_SELLER` (đã là SELLER/ADMIN) hoặc `409 SELLER_REQUEST_A
 
 Cả 2 không cần body, cần quyền `USER.REVIEW_SELLER_REQUESTS`. Response giống mục 2.4 nhưng
 `status` = `APPROVED`/`REJECTED`, có `reviewedAt`/`reviewedBy`.
-Lỗi: `409 SELLER_REQUEST_ALREADY_REVIEWED` nếu gọi lại trên yêu cầu đã xử lý.
+Lỗi: `404 SELLER_REQUEST_NOT_FOUND` nếu không có yêu cầu với `id` đó; `409 SELLER_REQUEST_ALREADY_REVIEWED`
+nếu gọi lại trên yêu cầu đã xử lý.
 
 ### 2.7. Đánh giá sau giao dịch (Rating)
 
@@ -193,6 +213,22 @@ Hiện chỉ có 1 loại phạt tự động: thắng đấu giá nhưng không
 thống tự trừ 10 điểm, không cần ai thao tác thủ công.
 
 ---
+
+### 2.10. (Admin) Quản lý vai trò
+
+Dành cho ADMIN, quản lý các role và quyền gắn với role. Không dùng trong luồng người mua/bán.
+
+| | Method | Path | Quyền |
+|---|---|---|---|
+| Tạo | POST | `/api/v1/roles` | `ROLE.CREATE` |
+| Danh sách | GET | `/api/v1/roles` | `ROLE.LIST` |
+| Chi tiết | GET | `/api/v1/roles/{id}` | `ROLE.VIEW` |
+| Sửa | PUT | `/api/v1/roles/{id}` | `ROLE.UPDATE` |
+| Xóa | DELETE | `/api/v1/roles/{id}` | `ROLE.DELETE` |
+
+Body tạo: `{ "code": "...", "name": "...", "privilegeCodes": ["..."] }`. Lỗi: `409 ROLE_CODE_ALREADY_EXISTS`
+(trùng `code`); `409 ROLE_IN_USE` khi xóa role đang gán cho người dùng; `404 ROLE_NOT_FOUND` khi gán role
+không tồn tại cho người dùng (tạo user bởi admin).
 
 ## 3. Danh mục — Category (`catalog-service`)
 
@@ -295,7 +331,7 @@ Response 201, sản phẩm mới luôn có `status: "DRAFT"` (chưa hiện công
 // Body đổi trạng thái
 { "status": "ACTIVE" }  // hoặc "INACTIVE"
 ```
-Lỗi `403` nếu không phải chủ sản phẩm và không phải ADMIN.
+Lỗi `403 PRODUCT_NOT_OWNED` nếu không phải chủ sản phẩm và không phải ADMIN.
 
 ---
 
@@ -348,7 +384,8 @@ chi tiết sản phẩm cần gọi cái này để biết có đấu giá hay k
 Phiên mới luôn bắt đầu ở `status: "PENDING"` — có 1 job chạy ngầm mỗi 10 giây tự chuyển
 `PENDING → ACTIVE` khi tới `startTime`, và `ACTIVE → ENDED` khi tới `endTime`. FE không cần tự
 chuyển trạng thái.
-Lỗi `409 TOO_MANY_ACTIVE_AUCTIONS` nếu seller đang có ≥ 5 phiên PENDING/ACTIVE cùng lúc.
+Lỗi `409 TOO_MANY_ACTIVE_AUCTIONS` nếu seller đang có ≥ 5 phiên PENDING/ACTIVE cùng lúc;
+`409 PRODUCT_ALREADY_IN_AUCTION` nếu sản phẩm đó đã có 1 phiên PENDING/ACTIVE.
 Từ 2026-10-17 sản phẩm phải **của chính seller, đang `ACTIVE` và còn ít nhất 1 trong kho**:
 `403 NOT_THE_PRODUCT_OWNER` nếu là sản phẩm của người khác; `409 PRODUCT_NOT_AVAILABLE` nếu sản
 phẩm không tồn tại hoặc chưa/không còn `ACTIVE`; `409 INSUFFICIENT_STOCK` nếu kho bằng 0 (nhập
@@ -372,6 +409,9 @@ Body sửa giống hệt body tạo (không có `productId`):
 ```json
 { "startingPrice": 500000, "bidIncrement": 50000, "startTime": "...", "endTime": "..." }
 ```
+Lỗi: `403 AUCTION_NOT_OWNED` nếu sửa/hủy phiên của người khác (ADMIN muốn hủy dùng `admin-cancel`);
+`409 AUCTION_NOT_EDITABLE` nếu sửa phiên không còn `PENDING`; `409 AUCTION_NOT_CANCELLABLE` nếu seller tự hủy
+phiên đã có người đặt giá hoặc đã kết thúc/bị hủy, hoặc admin hủy phiên đã kết thúc/bị hủy.
 
 ### 5.5. Đặt giá
 
@@ -393,6 +433,9 @@ Giá hợp lệ phải ≥ `currentHighestBid + bidIncrement` (hoặc ≥ `start
 nếu chưa ai đặt). Lỗi `400 VALIDATION_ERROR`, chi tiết số tiền tối thiểu nằm trong
 `error.fieldErrors[0].message` (vd `"Bid must be at least 600000.00"`) — **nên hiện message
 này cho người dùng thay vì message chung ở `error.message`**.
+
+Lỗi `409` khác: `AUCTION_NOT_ACTIVE` (phiên chưa bắt đầu, đã kết thúc hoặc bị hủy), `AUCTION_ENDED` (đã quá
+giờ kết thúc nhưng phiên chưa kịp đóng), `SELLER_CANNOT_BID_OWN_AUCTION` (người bán tự đặt giá phiên của mình).
 
 ### 5.6. Lịch sử đặt giá
 
@@ -538,7 +581,8 @@ Sau khi thanh toán xong trên Stripe, Stripe tự redirect về `successUrl` k�
 ```
 Response trả về `OrderResponse` với `status: "PAID"` và `paidAt` đã có giá trị. Gọi lại nhiều
 lần (vd người dùng bấm back rồi vào lại trang success) là an toàn — idempotent, trả về cùng kết
-quả, không thanh toán 2 lần. Lỗi `409 PAYMENT_NOT_CONFIRMED` nếu gọi trước khi Stripe thực sự
+quả, không thanh toán 2 lần. Lỗi `409 SESSION_ORDER_MISMATCH` nếu `sessionId` không thuộc đơn hàng / người mua này;
+`409 PAYMENT_NOT_CONFIRMED` nếu gọi trước khi Stripe thực sự
 ghi nhận thanh toán xong (hiếm, có thể do mạng chậm — FE nên thử lại sau 1-2 giây).
 
 Không cần lo nếu khách tắt tab trước khi về trang success: Stripe tự gọi webhook
@@ -730,6 +774,7 @@ Tồn kho tính theo **mã sản phẩm** (`id` ở mục 4.3), không phải `s
 ### 7.2. Đánh dấu đã đọc
 
 `PATCH /api/v1/notifications/{id}/read` — cần đăng nhập. Không có body, `data: null`.
+Lỗi: `404 NOTIFICATION_NOT_FOUND`; `403 NOT_YOUR_NOTIFICATION` nếu thông báo của người khác.
 
 ### 7.3. (Admin) Xem toàn bộ thông báo hệ thống
 
