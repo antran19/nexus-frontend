@@ -56,7 +56,7 @@ export default function PaymentCancelPage() {
             type="button"
             disabled={busy}
             onClick={handleRetry}
-            className="px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
           >
             Thanh toán lại
           </button>

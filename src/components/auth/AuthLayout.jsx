@@ -18,13 +18,13 @@ export default function AuthLayout({ title, subtitle, children }) {
 
   return (
     <div ref={scope} className="min-h-[calc(100vh-57px)] grid md:grid-cols-2">
-      <div className="relative hidden md:flex items-center overflow-hidden bg-gray-900">
+      <div className="relative hidden md:flex items-center overflow-hidden bg-ink">
         <img
           src="/images/hero-poster.jpg"
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-50"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/20" />
 
         <Link
           to="/"

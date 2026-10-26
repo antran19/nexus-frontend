@@ -9,8 +9,8 @@ export default function Header() {
   const { pathname } = useLocation()
 
   // On the landing page the header floats transparently over the hero video
-  // and turns solid once the user scrolls; every other page keeps the plain
-  // white bar (those pages have white backgrounds, so white text would vanish).
+  // and turns solid once the user scrolls; every other page gets the same dark
+  // bar, pinned to the top, so the whole site reads as one.
   const overHero = pathname === '/'
   const [scrolled, setScrolled] = useState(false)
 
@@ -44,14 +44,10 @@ export default function Header() {
     : 'bg-gradient-to-b from-black/50 to-transparent border-transparent'
   const barClass = overHero
     ? `fixed inset-x-0 top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${floatingSkin}`
-    : 'border-b border-gray-200'
-  const brandClass = overHero ? 'text-white' : 'text-gray-900'
-  const linkClass = overHero
-    ? 'text-sm text-white/80 hover:text-white'
-    : 'text-sm text-gray-700 hover:text-gray-900'
-  const buttonClass = overHero
-    ? 'text-sm px-3 py-1.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-soft'
-    : 'text-sm px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-gray-700'
+    : 'sticky top-0 z-40 border-b border-white/10 bg-ink'
+  const brandClass = 'text-white'
+  const linkClass = 'text-sm text-white/80 hover:text-white'
+  const buttonClass = 'text-sm px-3 py-1.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-soft'
 
   return (
     <header className={`flex items-center justify-between px-6 py-4 ${barClass}`}>

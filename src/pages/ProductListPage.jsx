@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getProducts } from '../api/products'
+import PageHero from '../components/PageHero'
 import ProductCard from '../components/ProductCard'
 
 export default function ProductListPage() {
@@ -43,14 +44,12 @@ export default function ProductListPage() {
   }, [keyword, categoryId, attempt])
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Danh mục sản phẩm</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">Khám phá các tuyệt phẩm</h1>
-          <p className="mt-2 text-gray-600">Được thẩm định nghiêm ngặt và lưu trữ trên mạng lưới Nexus.</p>
-        </div>
-
+    <>
+      <PageHero
+        eyebrow="Danh mục sản phẩm"
+        title="Khám phá các tuyệt phẩm"
+        subtitle="Được thẩm định nghiêm ngặt và lưu trữ trên mạng lưới Nexus."
+      >
         <div className="w-full md:w-80">
           <input
             type="search"
@@ -59,11 +58,12 @@ export default function ProductListPage() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') setKeyword(e.currentTarget.value)
             }}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
+            className="w-full rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
           />
         </div>
-      </div>
+      </PageHero>
 
+      <div className="max-w-6xl mx-auto px-6 py-12">
       {loading ? (
         <div className="py-20 text-center text-sm text-gray-500">Đang tải sản phẩm...</div>
       ) : failed ? (
@@ -72,7 +72,7 @@ export default function ProductListPage() {
           <button
             type="button"
             onClick={retry}
-            className="mt-4 px-5 py-2 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
+            className="mt-4 px-5 py-2 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
           >
             Thử lại
           </button>
@@ -88,6 +88,7 @@ export default function ProductListPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

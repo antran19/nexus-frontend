@@ -94,7 +94,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 bg-gray-900 text-white rounded-full py-2.5 font-medium disabled:opacity-50 hover:bg-gray-700 transition-colors"
+          className="mt-2 bg-ink text-white rounded-full py-2.5 font-medium disabled:opacity-50 hover:bg-gold hover:text-ink transition-colors"
         >
           {submitting ? 'Đang xử lý...' : 'Đăng ký'}
         </button>

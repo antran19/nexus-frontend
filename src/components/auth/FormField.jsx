@@ -9,7 +9,7 @@ export default function FormField({ icon: Icon, type = 'text', ...inputProps }) 
   const resolvedType = isPassword && revealed ? 'text' : type
 
   return (
-    <div className="flex items-center gap-3 border-b border-gray-300 py-2.5 focus-within:border-gray-900 transition-colors">
+    <div className="flex items-center gap-3 border-b border-gray-300 py-2.5 focus-within:border-gold transition-colors">
       <Icon className="w-5 h-5 text-gray-400 shrink-0" />
       <input
         type={resolvedType}

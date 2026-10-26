@@ -78,7 +78,7 @@ export default function PaymentSuccessPage() {
       {body}
       <Link
         to="/products"
-        className="mt-8 inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
+        className="mt-8 inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
       >
         Tiếp tục mua sắm
       </Link>

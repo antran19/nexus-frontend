@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getCart } from '../api/cart'
 import { createCheckoutSession, setShippingAddress, startCheckout } from '../api/orders'
+import PageHero from '../components/PageHero'
 import { cartErrorMessage, errorMessage } from '../utils/apiError'
 
 const EMPTY_ADDRESS = { recipientName: '', phone: '', addressLine: '', city: '' }
@@ -98,7 +99,7 @@ export default function CheckoutPage() {
         <p className="text-base text-gray-600 mb-6">Giỏ hàng trống, chưa có gì để thanh toán.</p>
         <Link
           to="/products"
-          className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
+          className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
         >
           Khám phá sản phẩm
         </Link>
@@ -107,12 +108,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="mb-10">
-        <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Bước cuối</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Thanh toán</h1>
-      </div>
+    <>
+      <PageHero eyebrow="Bước cuối" title="Thanh toán" />
 
+      <div className="max-w-5xl mx-auto px-6 py-12">
       {errorText && (
         <div className="mb-6 p-4 rounded border border-red-200 bg-red-50 text-sm text-red-700">
           {errorText}{' '}
@@ -174,7 +173,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors disabled:opacity-50"
+            className="mt-2 w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
           >
             {submitting ? 'Đang chuyển tới Stripe...' : 'Thanh toán với Stripe'}
           </button>
@@ -183,7 +182,7 @@ export default function CheckoutPage() {
           </p>
         </form>
 
-        <div className="border border-gray-200 rounded-lg p-6 bg-gray-50/50">
+        <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
           <h2 className="text-lg font-bold text-ink mb-4">Đơn hàng</h2>
           <ul className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
             {items.map((item) => (
@@ -203,6 +202,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

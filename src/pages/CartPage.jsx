@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getCart, removeCartItem, updateCartItem } from '../api/cart'
+import PageHero from '../components/PageHero'
 import { cartErrorMessage } from '../utils/apiError'
 import { resolveProductImage } from '../utils/images'
 
@@ -80,12 +81,10 @@ export default function CartPage() {
   const totalAmount = cart?.totalAmount ?? 0
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="mb-10">
-        <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Túi đồ của bạn</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Giỏ hàng</h1>
-      </div>
+    <>
+      <PageHero eyebrow="Túi đồ của bạn" title="Giỏ hàng" />
 
+      <div className="max-w-5xl mx-auto px-6 py-12">
       {errorMessage && (
         <div className="mb-6 p-4 rounded border border-red-200 bg-red-50 text-sm text-red-700">
           {errorMessage}
@@ -97,7 +96,7 @@ export default function CartPage() {
           <p className="text-base text-gray-600 mb-6">Giỏ hàng của bạn đang trống.</p>
           <Link
             to="/products"
-            className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
+            className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
           >
             Khám phá sản phẩm
           </Link>
@@ -175,7 +174,7 @@ export default function CartPage() {
             })}
           </div>
 
-          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50/50">
+          <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
             <h2 className="text-lg font-bold text-ink mb-4">Tóm tắt đơn hàng</h2>
 
             <div className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
@@ -197,7 +196,7 @@ export default function CartPage() {
             <button
               type="button"
               onClick={() => navigate('/checkout')}
-              className="w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
+              className="w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
             >
               Tiến hành đặt hàng
             </button>
@@ -211,6 +210,7 @@ export default function CartPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

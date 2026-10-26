@@ -103,7 +103,7 @@ export default function ProductDetailPage() {
   const mainImage = product.imageUrls?.[0] || resolveProductImage(product)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-8">
+    <div className="max-w-5xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-10">
       <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200/80 shadow-sm">
         <img
           src={mainImage}
@@ -117,7 +117,7 @@ export default function ProductDetailPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">{product.name}</h1>
+        <h1 className="text-3xl font-light text-ink">{product.name}</h1>
         <p className="text-gray-600 mt-2">{product.description}</p>
 
         {product.price != null && (
@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
                   type="button"
                   disabled={addingToCart}
                   onClick={handleAddToCart}
-                  className="bg-gray-900 text-white text-sm font-medium rounded px-5 py-2 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                  className="bg-ink text-white text-sm font-medium rounded px-5 py-2 hover:bg-gold hover:text-ink disabled:opacity-50 transition-colors"
                 >
                   {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
                 </button>
@@ -171,7 +171,7 @@ export default function ProductDetailPage() {
         {!auction ? (
           <p className="text-sm text-gray-500 mt-6">Sản phẩm này chưa có phiên đấu giá nào.</p>
         ) : (
-          <div className="mt-6 border border-gray-200 rounded-lg p-4">
+          <div className="mt-6 border border-gray-200 bg-white shadow-sm rounded-xl p-5">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">{STATUS_LABEL[auction.status] ?? auction.status}</span>
               <span className="text-sm text-gray-500">
@@ -211,7 +211,7 @@ export default function ProductDetailPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-gray-900 text-white rounded px-4 py-2 disabled:opacity-50"
+                  className="bg-ink text-white rounded px-4 py-2 hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Đang gửi...' : 'Đặt giá'}
                 </button>
