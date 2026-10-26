@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getCart } from '../api/cart'
 import { createCheckoutSession, setShippingAddress, startCheckout } from '../api/orders'
-import { errorMessage } from '../utils/apiError'
+import { cartErrorMessage, errorMessage } from '../utils/apiError'
 
 const EMPTY_ADDRESS = { recipientName: '', phone: '', addressLine: '', city: '' }
 
@@ -76,7 +76,7 @@ export default function CheckoutPage() {
         setCartProblem(true)
         setErrorText(errorMessage(err, 'Giỏ hàng có sản phẩm không mua được.'))
       } else {
-        setErrorText(errorMessage(err, 'Không thể tạo đơn hàng. Vui lòng thử lại.'))
+        setErrorText(cartErrorMessage(err, 'Không thể tạo đơn hàng. Vui lòng thử lại.'))
       }
       setSubmitting(false)
     }

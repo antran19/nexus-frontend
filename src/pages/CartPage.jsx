@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getCart, removeCartItem, updateCartItem } from '../api/cart'
+import { cartErrorMessage } from '../utils/apiError'
 import { resolveProductImage } from '../utils/images'
 
 export default function CartPage() {
@@ -16,8 +17,8 @@ export default function CartPage() {
       .then(({ data }) => {
         if (!cancelled) setCart(data)
       })
-      .catch(() => {
-        if (!cancelled) setErrorMessage('Không thể tải thông tin giỏ hàng. Vui lòng thử lại sau.')
+      .catch((err) => {
+        if (!cancelled) setErrorMessage(cartErrorMessage(err, 'Không thể tải thông tin giỏ hàng. Vui lòng thử lại sau.'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -31,8 +32,8 @@ export default function CartPage() {
     try {
       const { data } = await getCart()
       setCart(data)
-    } catch {
-      setErrorMessage('Không thể tải thông tin giỏ hàng. Vui lòng thử lại sau.')
+    } catch (err) {
+      setErrorMessage(cartErrorMessage(err, 'Không thể tải thông tin giỏ hàng. Vui lòng thử lại sau.'))
     }
   }
 
@@ -48,12 +49,7 @@ export default function CartPage() {
       const { data } = await updateCartItem(productId, newQuantity)
       setCart(data)
     } catch (err) {
-      const apiError = err.response?.data?.error
-      const message =
-        apiError?.code === 'INSUFFICIENT_STOCK'
-          ? 'Số lượng sản phẩm trong kho không đủ.'
-          : apiError?.message || 'Không thể cập nhật số lượng.'
-      setErrorMessage(message)
+      setErrorMessage(cartErrorMessage(err, 'Không thể cập nhật số lượng.'))
     } finally {
       setUpdatingId(null)
     }
@@ -66,8 +62,7 @@ export default function CartPage() {
       await removeCartItem(productId)
       await reloadCart()
     } catch (err) {
-      const apiError = err.response?.data?.error
-      setErrorMessage(apiError?.message || 'Không thể xóa sản phẩm khỏi giỏ.')
+      setErrorMessage(cartErrorMessage(err, 'Không thể xóa sản phẩm khỏi giỏ.'))
     } finally {
       setUpdatingId(null)
     }

@@ -12,10 +12,14 @@ export default function ProductListPage() {
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
 
-  useEffect(() => {
-    let cancelled = false
+  function retry() {
     setLoading(true)
     setFailed(false)
+    setAttempt((n) => n + 1)
+  }
+
+  useEffect(() => {
+    let cancelled = false
     getProducts({ q: keyword || undefined, categoryId })
       .then(({ data }) => {
         if (!cancelled) {
@@ -67,7 +71,7 @@ export default function ProductListPage() {
           <p className="text-sm text-red-700">Không tải được danh sách sản phẩm.</p>
           <button
             type="button"
-            onClick={() => setAttempt((n) => n + 1)}
+            onClick={retry}
             className="mt-4 px-5 py-2 rounded bg-ink text-white text-sm font-medium hover:bg-ink-soft transition-colors"
           >
             Thử lại

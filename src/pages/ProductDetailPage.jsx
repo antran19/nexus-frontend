@@ -4,6 +4,7 @@ import { getAuctionsByProduct, getBidHistory, placeBid } from '../api/auctions'
 import { addToCart } from '../api/cart'
 import { getProductById } from '../api/products'
 import { useAuth } from '../context/AuthContext'
+import { cartErrorMessage } from '../utils/apiError'
 import { resolveProductImage } from '../utils/images'
 
 const STATUS_LABEL = {
@@ -90,12 +91,7 @@ export default function ProductDetailPage() {
       await addToCart(product.id, Number(cartQuantity))
       setCartSuccess(true)
     } catch (err) {
-      const apiError = err.response?.data?.error
-      const message =
-        apiError?.code === 'INSUFFICIENT_STOCK'
-          ? 'Số lượng sản phẩm trong kho không đủ.'
-          : apiError?.message || 'Không thể thêm sản phẩm vào giỏ.'
-      setCartError(message)
+      setCartError(cartErrorMessage(err, 'Không thể thêm sản phẩm vào giỏ.'))
     } finally {
       setAddingToCart(false)
     }
