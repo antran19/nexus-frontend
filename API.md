@@ -429,8 +429,8 @@ BUYER mặc định)
     "placedAt": "2026-10-07T02:16:44Z"
 } }
 ```
-Giá hợp lệ phải ≥ `currentHighestBid + bidIncrement` (hoặc ≥ `startingPrice + bidIncrement`
-nếu chưa ai đặt). Lỗi `400 VALIDATION_ERROR`, chi tiết số tiền tối thiểu nằm trong
+Giá hợp lệ phải ≥ `currentHighestBid + bidIncrement`; nếu chưa ai đặt thì chỉ cần ≥ `startingPrice`
+(lượt đầu **không** cộng thêm bước giá). Lỗi `400 VALIDATION_ERROR`, chi tiết số tiền tối thiểu nằm trong
 `error.fieldErrors[0].message` (vd `"Bid must be at least 600000.00"`) — **nên hiện message
 này cho người dùng thay vì message chung ở `error.message`**.
 
