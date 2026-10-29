@@ -412,6 +412,10 @@ Body sửa giống hệt body tạo (không có `productId`):
 Lỗi: `403 AUCTION_NOT_OWNED` nếu sửa/hủy phiên của người khác (ADMIN muốn hủy dùng `admin-cancel`);
 `409 AUCTION_NOT_EDITABLE` nếu sửa phiên không còn `PENDING`; `409 AUCTION_NOT_CANCELLABLE` nếu seller tự hủy
 phiên đã có người đặt giá hoặc đã kết thúc/bị hủy, hoặc admin hủy phiên đã kết thúc/bị hủy.
+Vòng đời của phiên là `PENDING` → `ACTIVE` → `ENDED`; `CANCELLED` đến được từ `PENDING` hoặc `ACTIVE`;
+`ENDED` và `CANCELLED` là trạng thái cuối. Mọi bước đổi trạng thái khác bị từ chối với
+`409 INVALID_AUCTION_TRANSITION` (lưới an toàn khi hai thao tác đụng nhau, ví dụ job kết thúc phiên
+chạy đúng lúc người bán hủy; FE thường chỉ gặp các mã cụ thể ở trên).
 
 ### 5.5. Đặt giá
 
