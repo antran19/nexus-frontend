@@ -115,8 +115,10 @@ hoặc `confirmNewPassword` khác `newPassword` (lỗi gắn vào `confirmNewPas
 Đặt lại mật khẩu sau khi quên (`POST /api/v1/auth/reset-password`, body `token`, `newPassword`,
 `confirmNewPassword`) dùng cùng quy tắc.
 
-Quên mật khẩu: `POST /api/v1/auth/forgot-password`, body `{ "email": "..." }`. Lỗi `404 EMAIL_NOT_FOUND`
-nếu không có tài khoản nào dùng email đó.
+Quên mật khẩu: `POST /api/v1/auth/forgot-password`, body `{ "email": "..." }`. Luôn trả `200` với **cùng một nội
+dung** (`data.message`: "If an account exists for that email, a password reset code has been sent to it."), dù email
+có tài khoản hay không, để không ai dò được email nào đã đăng ký. Mã đặt lại mật khẩu **chỉ gửi qua email**, không
+nằm trong response; FE hiện thông báo chung rồi cho người dùng nhập mã nhận được vào bước đặt lại mật khẩu.
 
 ### 2.4. Yêu cầu trở thành người bán
 
