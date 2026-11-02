@@ -447,6 +447,33 @@ giờ kết thúc nhưng phiên chưa kịp đóng), `SELLER_CANNOT_BID_OWN_AUCT
 
 `GET /api/v1/auctions/{auctionId}/bids?page=0&size=20` — public
 
+### 5.7. Theo dõi giá trực tiếp (SSE)
+
+`GET /api/v1/auctions/{auctionId}/stream` — public, không cần đăng nhập. Mở một kết nối giữ nguyên
+(Server-Sent Events); mỗi lượt đặt giá **được chấp nhận** được đẩy xuống ngay, không cần tải lại trang.
+
+```js
+const source = new EventSource(`${API}/api/v1/auctions/${auctionId}/stream`);
+source.addEventListener('bid', (e) => {
+  const bid = JSON.parse(e.data);   // { id, auctionId, bidderId, amount, placedAt }
+});
+```
+
+- Sự kiện tên `bid`, dữ liệu cùng dạng với một phần tử của lịch sử đặt giá (mục 5.6).
+- Chỉ lượt giá đã được lưu mới được đẩy; lượt bị từ chối (400/409) thì không.
+- Phiên không tồn tại: `404 AUCTION_NOT_FOUND` như bình thường (không mở kết nối).
+- Kết nối tự đóng sau 30 phút; `EventSource` tự kết nối lại, nhưng các lượt giá xảy ra trong lúc mất
+  kết nối **không được gửi bù** — sau khi kết nối lại hãy gọi lịch sử (5.6) hoặc chi tiết phiên (5.1)
+  để lấy giá hiện tại.
+- Hiện chỉ đúng khi `auction-service` chạy một bản (danh sách người xem nằm trong bộ nhớ).
+
+### 5.8. Đặt giá tự động (đang phát triển — CHƯA có endpoint)
+
+Dành cho FE biết trước, **chưa gọi được**. Người mua đặt một mức tối đa, hệ thống tự ra giá thay họ từng
+bước giá khi có người trả cao hơn, tới mức đó. Quy tắc đã chốt: mỗi người một mức trên mỗi phiên;
+mức tối đa chỉ được **nâng**, không được hạ (hạ sẽ trả `409 AUTO_BID_CANNOT_BE_LOWERED`); hai mức bằng
+nhau thì người đặt trước thắng. Phần lưu mức tối đa đã có trong code, phần tự ra giá và endpoint sẽ thêm sau.
+
 ---
 
 ## 6. Mua trực tiếp & Thanh toán — Commerce (`commerce-service`)
