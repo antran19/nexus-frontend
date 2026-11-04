@@ -467,12 +467,37 @@ source.addEventListener('bid', (e) => {
   để lấy giá hiện tại.
 - Hiện chỉ đúng khi `auction-service` chạy một bản (danh sách người xem nằm trong bộ nhớ).
 
-### 5.8. Đặt giá tự động (đang phát triển — CHƯA có endpoint)
+### 5.8. Đặt giá tự động
 
-Dành cho FE biết trước, **chưa gọi được**. Người mua đặt một mức tối đa, hệ thống tự ra giá thay họ từng
-bước giá khi có người trả cao hơn, tới mức đó. Quy tắc đã chốt: mỗi người một mức trên mỗi phiên;
-mức tối đa chỉ được **nâng**, không được hạ (hạ sẽ trả `409 AUTO_BID_CANNOT_BE_LOWERED`); hai mức bằng
-nhau thì người đặt trước thắng. Phần lưu mức tối đa đã có trong code, phần tự ra giá và endpoint sẽ thêm sau.
+`PUT /api/v1/auctions/{auctionId}/auto-bid` — cần quyền `AUCTION.BID` (giống đặt giá tay)
+
+Người mua đặt một **mức tối đa**; hệ thống tự ra giá thay họ, vừa đủ để dẫn đầu, và không bao giờ vượt mức đó.
+Mức tối đa được giấu: chỉ giá hiện tại được công khai.
+
+```json
+// Request
+{ "maxAmount": 500000 }
+```
+```json
+// Response 200
+{ "success": true, "data": {
+    "id": "...", "auctionId": "...", "bidderId": "...", "maxAmount": 500000.00,
+    "updatedAt": "2026-11-04T14:00:00Z"
+} }
+```
+`bidderId` luôn lấy từ token (bỏ qua nếu gửi trong body). Gọi lại với giá trị cao hơn sẽ nâng mức; cùng giá trị thì
+không đổi gì.
+
+Quy tắc:
+- Mức tối đa phải là một lượt giá hợp lệ ở thời điểm đặt (≥ giá khởi điểm nếu chưa ai đặt, ngược lại ≥ giá hiện
+  tại + bước giá), nếu không `400 VALIDATION_ERROR` (chi tiết ở `error.fieldErrors`).
+- **Chỉ được nâng, không được hạ**: hạ mức trả `409 AUTO_BID_CANNOT_BE_LOWERED`.
+- Mức cao hơn thắng; bằng nhau thì người đặt trước thắng. Người thắng trả **nhỏ hơn** của (mức của mình, mức của người
+  thua + một bước giá). Lịch sử đặt giá (5.6) luôn cách nhau ít nhất một bước giá.
+- Đặt mức xong có thể sinh ngay một hoặc vài lượt giá do hệ thống đặt (xuất hiện trong lịch sử và qua luồng SSE 5.7).
+  Lượt giá do hệ thống đặt **không** gia hạn phiên; chỉ lượt do người dùng gửi mới có thể gia hạn.
+- Lỗi khác giống đặt giá tay (5.5): `403 INSUFFICIENT_TRUST_TO_BID`, `404 AUCTION_NOT_FOUND`, `409 AUCTION_NOT_ACTIVE`,
+  `409 AUCTION_ENDED`, `409 SELLER_CANNOT_BID_OWN_AUCTION`.
 
 ---
 
