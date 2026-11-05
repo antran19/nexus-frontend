@@ -69,8 +69,12 @@ Tài khoản mới đăng ký luôn là **BUYER** — muốn bán hàng phải g
 
 ```json
 // Request
-{ "email": "a@b.com", "password": "8 đến 72 ký tự", "confirmPassword": "nhập lại đúng mật khẩu trên", "fullName": "Nguyễn Văn A" }
+{ "email": "a@b.com", "password": "8 đến 72 ký tự", "confirmPassword": "nhập lại đúng mật khẩu trên", "fullName": "Nguyễn Văn A",
+  "phone": "0901234567", "birthDate": "1995-06-15", "termsAccepted": true, "escrowAcknowledged": true }
 ```
+Các trường lưu cùng tài khoản (từ migration V20): `phone`, `birthDate`, và **thời điểm** đồng ý điều khoản
+(`terms_accepted_at`) và quy chế ký quỹ (`escrow_acknowledged_at`). `phone` và `birthDate` **không bắt buộc**
+nhưng nếu có thì được kiểm; `termsAccepted` và `escrowAcknowledged` **bắt buộc và phải là `true`**.
 ```json
 // Response 201
 { "success": true, "data": { "id": "...", "email": "a@b.com", "fullName": "Nguyễn Văn A" } }
@@ -81,6 +85,12 @@ Lỗi `400 VALIDATION_ERROR` kèm `error.fieldErrors` (`field` + `message`), m�
 - `password`: ngoài khoảng 8 đến 72 ký tự (72 là giới hạn của BCrypt).
 - `confirmPassword`: thiếu, hoặc **không giống hệt** `password` (phân biệt hoa thường, có tính khoảng trắng).
 - `email`, `fullName`: tối đa 255 ký tự.
+- `phone`: phải là số Việt Nam (`0xxxxxxxxx` hoặc `+84xxxxxxxxx`); server bỏ khoảng trắng, dấu chấm, dấu gạch
+  ngang rồi lưu dạng gọn (`0901 234 567` → `0901234567`).
+- `birthDate`: dạng ISO `yyyy-MM-dd`, không ở tương lai, không trước 1900, và người đăng ký phải **đủ 18 tuổi**
+  (tính theo giờ Việt Nam).
+- `termsAccepted`, `escrowAcknowledged`: thiếu hoặc `false` đều bị từ chối. Quy tắc 18 tuổi và hai ô đồng ý được
+  kiểm ở **server**, không chỉ ở giao diện, nên gọi API trực tiếp cũng không bỏ qua được.
 
 FE vẫn nên tự kiểm hai ô mật khẩu trước khi gửi để báo lỗi ngay, nhưng server kiểm lại.
 

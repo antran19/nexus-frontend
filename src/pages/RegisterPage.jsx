@@ -5,9 +5,28 @@ import AuthLayout from '../components/auth/AuthLayout'
 import FormField from '../components/auth/FormField'
 import { LockIcon, MailIcon, UserIcon } from '../components/auth/icons'
 
+// The server checks these rules again; this only saves a round trip for the obvious mistakes.
+function ageOn(isoDate) {
+  const born = new Date(isoDate)
+  const now = new Date()
+  let age = now.getFullYear() - born.getFullYear()
+  const hadBirthday = now.getMonth() > born.getMonth() || (now.getMonth() === born.getMonth() && now.getDate() >= born.getDate())
+  if (!hadBirthday) age -= 1
+  return age
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    birthDate: '',
+    termsAccepted: false,
+    escrowAcknowledged: false,
+  })
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -20,6 +39,19 @@ export default function RegisterPage() {
     }
     if (form.password !== form.confirmPassword) {
       return 'Mật khẩu xác nhận không khớp'
+    }
+    const phone = form.phone.replace(/[\s.-]/g, '')
+    if (phone && !/^(0\d{9}|\+84\d{9})$/.test(phone)) {
+      return 'Số điện thoại phải là số Việt Nam (0xxxxxxxxx hoặc +84xxxxxxxxx)'
+    }
+    if (form.birthDate && ageOn(form.birthDate) < 18) {
+      return 'Bạn cần đủ 18 tuổi để tham gia đấu giá'
+    }
+    if (!form.termsAccepted) {
+      return 'Bạn cần đồng ý Điều khoản Dịch vụ'
+    }
+    if (!form.escrowAcknowledged) {
+      return 'Bạn cần xác nhận đã hiểu quy chế ký quỹ'
     }
     return ''
   }
@@ -35,7 +67,7 @@ export default function RegisterPage() {
     setSubmitting(true)
     setError('')
     try {
-      await register(form)
+      await register({ ...form, phone: form.phone.replace(/[\s.-]/g, '') })
       navigate('/login')
     } catch (err) {
       // A 400 carries the rule that failed per field; show it instead of the generic message.
@@ -88,6 +120,41 @@ export default function RegisterPage() {
           onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
           required
         />
+        <FormField
+          icon={UserIcon}
+          type="tel"
+          placeholder="Số điện thoại (không bắt buộc)"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
+        <label className="flex flex-col gap-1 text-xs text-gray-500">
+          Ngày sinh (không bắt buộc, cần đủ 18 tuổi)
+          <FormField
+            icon={UserIcon}
+            type="date"
+            aria-label="Ngày sinh"
+            value={form.birthDate}
+            onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+          />
+        </label>
+        <label className="flex items-start gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={form.termsAccepted}
+            onChange={(e) => setForm({ ...form, termsAccepted: e.target.checked })}
+          />
+          Tôi đồng ý với Điều khoản Dịch vụ của Nexus
+        </label>
+        <label className="flex items-start gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={form.escrowAcknowledged}
+            onChange={(e) => setForm({ ...form, escrowAcknowledged: e.target.checked })}
+          />
+          Tôi đã hiểu quy chế ký quỹ khi tham gia đấu giá
+        </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
