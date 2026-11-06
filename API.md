@@ -242,6 +242,36 @@ Body tạo: `{ "code": "...", "name": "...", "privilegeCodes": ["..."] }`. Lỗi
 (trùng `code`); `409 ROLE_IN_USE` khi xóa role đang gán cho người dùng; `404 ROLE_NOT_FOUND` khi gán role
 không tồn tại cho người dùng (tạo user bởi admin).
 
+### 2.11. Hồ sơ của tôi
+
+`GET /api/v1/users/me` — cần đăng nhập (quyền `PROFILE.VIEW`, mọi role đều có). Tài khoản luôn là tài khoản trong
+token, không có tham số id.
+
+```json
+// Response 200
+{ "success": true, "data": {
+    "id": "...", "email": "a@b.com", "fullName": "Nguyễn Văn A", "roleCode": "BUYER",
+    "phone": "0901234567", "birthDate": "1995-06-15",
+    "termsAcceptedAt": "2026-11-05T03:00:00Z", "escrowAcknowledgedAt": "2026-11-05T03:00:00Z",
+    "createdAt": "2026-10-01T00:00:00Z"
+} }
+```
+`phone`, `birthDate` và hai mốc đồng ý là `null` với tài khoản tạo trước khi có các trường này hoặc do admin tạo.
+Không bao giờ trả mật khẩu hay hash.
+
+`PUT /api/v1/users/me` — quyền `PROFILE.UPDATE`. Chỉ đổi được **họ tên** và **số điện thoại**.
+
+```json
+// Request
+{ "fullName": "Nguyễn Văn A", "phone": "0988 777 666" }
+```
+- Trả `200` với hồ sơ mới (cùng dạng như `GET`).
+- `phone` kiểm giống lúc đăng ký (số Việt Nam, bỏ khoảng trắng, dấu chấm, gạch ngang rồi lưu dạng gọn); `phone` rỗng
+  hoặc bỏ trống thì **xoá** số điện thoại.
+- Email, vai trò, ngày sinh và thời điểm đồng ý **không đổi được** ở đây; các trường thừa trong body bị bỏ qua.
+- Lỗi: `400 VALIDATION_ERROR` (`fieldErrors` ở `fullName` hoặc `phone`), `401`, `403`, `404 USER_NOT_FOUND` (tài
+  khoản đã bị xoá).
+
 ## 3. Danh mục — Category (`catalog-service`)
 
 ### 3.1. Danh sách danh mục
