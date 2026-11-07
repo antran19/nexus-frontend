@@ -539,6 +539,43 @@ Quy tắc:
 - Lỗi khác giống đặt giá tay (5.5): `403 INSUFFICIENT_TRUST_TO_BID`, `404 AUCTION_NOT_FOUND`, `409 AUCTION_NOT_ACTIVE`,
   `409 AUCTION_ENDED`, `409 SELLER_CANNOT_BID_OWN_AUCTION`.
 
+### 5.9. Xem mức tối đa của tôi
+
+`GET /api/v1/auctions/{auctionId}/auto-bid` — cần đăng nhập và quyền `AUCTION.BID`
+
+Trả về mức tối đa **của chính người trong token** trên phiên này (cùng dạng dữ liệu với response 200 của 5.8). Không có
+cách nào xem mức của người khác.
+
+Lỗi: `401` nếu chưa đăng nhập, `403` nếu thiếu quyền, `404 AUCTION_NOT_FOUND` nếu không có phiên, và
+`404 AUTO_BID_NOT_FOUND` nếu bạn chưa đặt mức tối đa nào ở phiên này (FE nên coi đây là trạng thái "chưa đặt", không phải lỗi).
+
+### 5.10. Các phiên tôi đang tham gia
+
+`GET /api/v1/auctions/mine/bidding?page=0&size=20` — cần đăng nhập và quyền `AUCTION.BID`
+
+Các phiên mà người trong token đã từng đặt giá, phiên có lượt giá mới nhất của họ đứng đầu. `size` từ 1 đến 100, sai thì
+`400 VALIDATION_ERROR`.
+
+```json
+// Response 200
+{ "success": true, "data": [ {
+    "auctionId": "...", "productId": "...", "auctionStatus": "ACTIVE", "myStatus": "OUTBID",
+    "endTime": "2026-11-04T16:00:00Z", "currentHighestBid": 130000.00,
+    "myHighestBid": 120000.00, "myMaxAutoBid": 500000.00
+} ] }
+```
+`myStatus` cho FE biết ngay mình đang ở đâu:
+
+| `myStatus` | Khi nào |
+|---|---|
+| `LEADING` | phiên đang diễn ra và bạn là người trả giá cao nhất |
+| `OUTBID` | phiên đang diễn ra nhưng đã có người trả cao hơn |
+| `WON` / `LOST` | phiên đã kết thúc, bạn thắng / không thắng |
+| `CANCELLED` | phiên bị hủy |
+| `PENDING` | phiên chưa mở |
+
+`myMaxAutoBid` là `null` nếu bạn chưa đặt mức tối đa ở phiên đó.
+
 ---
 
 ## 6. Mua trực tiếp & Thanh toán — Commerce (`commerce-service`)
