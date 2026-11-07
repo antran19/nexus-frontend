@@ -911,7 +911,24 @@ Tồn kho tính theo **mã sản phẩm** (`id` ở mục 4.3), không phải `s
 `PATCH /api/v1/notifications/{id}/read` — cần đăng nhập. Không có body, `data: null`.
 Lỗi: `404 NOTIFICATION_NOT_FOUND`; `403 NOT_YOUR_NOTIFICATION` nếu thông báo của người khác.
 
-### 7.3. (Admin) Xem toàn bộ thông báo hệ thống
+### 7.3. Số thông báo chưa đọc
+
+`GET /api/v1/notifications/me/unread-count` — cần đăng nhập. Dùng cho chấm đỏ trên chuông.
+
+```json
+{ "success": true, "data": { "unreadCount": 3 } }
+```
+
+### 7.4. Đánh dấu tất cả đã đọc
+
+`PATCH /api/v1/notifications/me/read-all` — cần đăng nhập. Không có body. Chỉ đụng tới thông báo của chính người trong token.
+
+```json
+{ "success": true, "data": { "updated": 3 } }
+```
+`updated` là số thông báo vừa chuyển từ chưa đọc sang đã đọc; gọi lại sẽ trả `0`, không lỗi.
+
+### 7.5. (Admin) Xem toàn bộ thông báo hệ thống
 
 `GET /api/v1/notifications?eventType=&aggregateId=` — cần quyền `NOTIFICATION.AUDIT` (chỉ
 ADMIN), dùng để tra cứu/hỗ trợ, không phải cho user thường.
