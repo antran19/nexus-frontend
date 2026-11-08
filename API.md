@@ -559,7 +559,7 @@ Các phiên mà người trong token đã từng đặt giá, phiên có lượt
 ```json
 // Response 200
 { "success": true, "data": [ {
-    "auctionId": "...", "productId": "...", "auctionStatus": "ACTIVE", "myStatus": "OUTBID",
+    "auctionId": "...", "productId": "...", "productName": "Đồng hồ cổ", "auctionStatus": "ACTIVE", "myStatus": "OUTBID",
     "endTime": "2026-11-04T16:00:00Z", "currentHighestBid": 130000.00,
     "myHighestBid": 120000.00, "myMaxAutoBid": 500000.00
 } ] }
@@ -575,6 +575,8 @@ Các phiên mà người trong token đã từng đặt giá, phiên có lượt
 | `PENDING` | phiên chưa mở |
 
 `myMaxAutoBid` là `null` nếu bạn chưa đặt mức tối đa ở phiên đó.
+
+`productName` là tên sản phẩm, lấy từ bản sao auction-service giữ theo sự kiện của catalog nên không cần gọi thêm `GET /products/{id}`. Nó là `null` với sản phẩm tạo trước khi có trường này, cho tới lần sản phẩm đó được đổi tên; khi đó FE hiển thị tên dự phòng hoặc tự gọi `GET /products/{id}`.
 
 ---
 
