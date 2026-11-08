@@ -15,3 +15,12 @@ export function getBidHistory(auctionId) {
 export function placeBid(auctionId, amount) {
   return apiClient.post(`/api/v1/auctions/${auctionId}/bids`, { amount })
 }
+
+// 404 AUTO_BID_NOT_FOUND just means "no maximum set" -- the caller treats it as null.
+export function getMyAutoBid(auctionId) {
+  return apiClient.get(`/api/v1/auctions/${auctionId}/auto-bid`)
+}
+
+export function setAutoBid(auctionId, maxAmount) {
+  return apiClient.put(`/api/v1/auctions/${auctionId}/auto-bid`, { maxAmount })
+}

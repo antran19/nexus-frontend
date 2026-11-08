@@ -24,3 +24,19 @@ export function cartErrorMessage(err, fallback) {
   if (apiError?.code === 'PRODUCT_NOT_AVAILABLE') return 'Sản phẩm này hiện không được bán.'
   return errorMessage(err, fallback)
 }
+
+// Placing a bid or a maximum: the status/code pairs a bidder can hit, in Vietnamese. A bid below the
+// minimum is a 400 whose useful text is in fieldErrors, which errorMessage already prefers.
+export function bidErrorMessage(err, fallback) {
+  const status = err.response?.status
+  const code = err.response?.data?.error?.code
+
+  if (status === 401) return 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'
+  if (code === 'INSUFFICIENT_TRUST_TO_BID') return 'Điểm uy tín của bạn chưa đủ để đặt giá ở phiên này.'
+  if (code === 'AUCTION_NOT_ACTIVE') return 'Phiên đấu giá này không còn nhận giá.'
+  if (code === 'AUCTION_ENDED') return 'Phiên đấu giá đã hết giờ.'
+  if (code === 'SELLER_CANNOT_BID_OWN_AUCTION') return 'Người bán không thể đặt giá phiên của chính mình.'
+  if (code === 'AUTO_BID_CANNOT_BE_LOWERED') return 'Mức tối đa chỉ được nâng lên, không được hạ xuống.'
+  if (status === 403) return 'Tài khoản của bạn không có quyền đặt giá.'
+  return errorMessage(err, fallback)
+}
