@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { scrollToTop } from './landing/useSmoothScroll'
 
 export default function Header() {
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
@@ -65,7 +65,9 @@ export default function Header() {
             <Link to="/cart" className={linkClass}>
               Giỏ hàng
             </Link>
-            <span className={linkClass}>{user?.sub ?? 'Tài khoản'}</span>
+            <Link to="/me" className={linkClass}>
+              Hồ sơ
+            </Link>
             <button onClick={handleLogout} className={buttonClass}>
               Đăng xuất
             </button>
