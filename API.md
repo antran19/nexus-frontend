@@ -906,6 +906,16 @@ Tồn kho tính theo **mã sản phẩm** (`id` ở mục 4.3), không phải `s
 } ] }
 ```
 
+Mới nhất đứng đầu. Tham số (đều tùy chọn):
+
+| Tham số | Mặc định | Ý nghĩa |
+|---|---|---|
+| `unread` | `false` | `true` chỉ trả những thông báo chưa đọc |
+| `page` | `0` | trang, bắt đầu từ 0 |
+| `size` | `20` | số dòng mỗi trang, từ 1 đến 100; sai thì `400 VALIDATION_ERROR` |
+
+Lưu ý: trước đây endpoint này trả toàn bộ, giờ mặc định chỉ trả 20 thông báo đầu. Trang cuối trả mảng rỗng.
+
 ### 7.2. Đánh dấu đã đọc
 
 `PATCH /api/v1/notifications/{id}/read` — cần đăng nhập. Không có body, `data: null`.
