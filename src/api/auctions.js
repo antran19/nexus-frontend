@@ -24,3 +24,8 @@ export function getMyAutoBid(auctionId) {
 export function setAutoBid(auctionId, maxAmount) {
   return apiClient.put(`/api/v1/auctions/${auctionId}/auto-bid`, { maxAmount })
 }
+
+// The auctions the signed-in person has bid in, newest activity first (API.md 5.10).
+export function getMyBidding(page, size) {
+  return apiClient.get('/api/v1/auctions/mine/bidding', { params: { page, size } })
+}

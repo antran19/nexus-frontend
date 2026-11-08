@@ -4,6 +4,7 @@ import { getAuction, getBidHistory, getMyAutoBid, placeBid, setAutoBid } from '.
 import { useAuth } from '../../context/AuthContext'
 import { applyBid, mergeBid, myStanding, nextMinBid } from '../../utils/auctionLive'
 import { bidErrorMessage } from '../../utils/apiError'
+import { STANDING } from '../../utils/standing'
 import { useAuctionStream } from './useAuctionStream'
 
 const STATUS_LABEL = {
@@ -11,13 +12,6 @@ const STATUS_LABEL = {
   ACTIVE: 'Đang diễn ra',
   ENDED: 'Đã kết thúc',
   CANCELLED: 'Đã hủy',
-}
-
-const STANDING = {
-  LEADING: { text: 'Bạn đang dẫn đầu', className: 'bg-green-50 text-green-800 border-green-200' },
-  OUTBID: { text: 'Bạn đã bị vượt giá', className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  WON: { text: 'Bạn đã thắng phiên này', className: 'bg-green-50 text-green-800 border-green-200' },
-  LOST: { text: 'Bạn không thắng phiên này', className: 'bg-gray-50 text-gray-700 border-gray-200' },
 }
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`

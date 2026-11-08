@@ -65,6 +65,9 @@ export default function Header() {
             <Link to="/cart" className={linkClass}>
               Giỏ hàng
             </Link>
+            <Link to="/me/bidding" className={linkClass}>
+              Phiên của tôi
+            </Link>
             <Link to="/me" className={linkClass}>
               Hồ sơ
             </Link>
