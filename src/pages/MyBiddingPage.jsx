@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMyBidding } from '../api/auctions'
-import { getProductById } from '../api/products'
 import PageHero from '../components/PageHero'
+import { useProductNames } from '../components/useProductNames'
 import { errorMessage } from '../utils/apiError'
 import { appendPage, FILTERS, filterItems, hasMorePages, PAGE_SIZE, summarize } from '../utils/myBidding'
 import { STANDING } from '../utils/standing'
@@ -10,27 +10,15 @@ import { STANDING } from '../utils/standing'
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
 
 // The auctions the signed-in person has bid in (API.md 5.10), newest activity first.
-// The list carries the product name; for the few rows where it is still null (products older than the
-// name column) the name is fetched once per product and cached here.
+// The list carries the product name; rows where it is still null get it from useProductNames.
 export default function MyBiddingPage() {
   const [items, setItems] = useState([])
-  const [names, setNames] = useState({})
+  const { nameOf, loadMissing } = useProductNames()
   const [page, setPage] = useState(0)
   const [more, setMore] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('ALL')
-
-  const loadNames = useCallback((rows) => {
-    const ids = [...new Set(rows.filter((row) => !row.productName).map((row) => row.productId))]
-    ids.forEach((id) => {
-      getProductById(id)
-        .then(({ data }) => setNames((current) => ({ ...current, [id]: data.name })))
-        .catch(() => {
-          // a product that cannot be read keeps its fallback title
-        })
-    })
-  }, [])
 
   const load = useCallback(
     async (pageNumber) => {
@@ -41,14 +29,14 @@ export default function MyBiddingPage() {
         setItems((current) => (pageNumber === 0 ? data : appendPage(current, data)))
         setPage(pageNumber)
         setMore(hasMorePages(data))
-        loadNames(data)
+        loadMissing(data)
       } catch (err) {
         setError(errorMessage(err, 'Không tải được danh sách phiên, vui lòng thử lại.'))
       } finally {
         setLoading(false)
       }
     },
-    [loadNames],
+    [loadMissing],
   )
 
   useEffect(() => {
@@ -107,7 +95,7 @@ export default function MyBiddingPage() {
                   className="block border border-gray-200 bg-white rounded-xl p-4 hover:border-gold hover:shadow-md transition-[border-color,box-shadow]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-medium text-gray-900">{item.productName ?? names[item.productId] ?? 'Sản phẩm đấu giá'}</span>
+                    <span className="font-medium text-gray-900">{nameOf(item)}</span>
                     {standing && (
                       <span className={`text-xs border rounded-full px-3 py-1 ${standing.className}`}>{standing.text}</span>
                     )}

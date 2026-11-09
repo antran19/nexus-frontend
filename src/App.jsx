@@ -8,6 +8,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import MyBiddingPage from './pages/MyBiddingPage'
+import MySellingPage from './pages/MySellingPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PaymentCancelPage from './pages/PaymentCancelPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
@@ -33,6 +34,7 @@ export default function App() {
             <Route element={<PrivateRoute />}>
               <Route path="/me" element={<ProfilePage />} />
               <Route path="/me/bidding" element={<MyBiddingPage />} />
+              <Route path="/me/selling" element={<MySellingPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />

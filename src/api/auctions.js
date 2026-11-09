@@ -29,3 +29,8 @@ export function setAutoBid(auctionId, maxAmount) {
 export function getMyBidding(page, size) {
   return apiClient.get('/api/v1/auctions/mine/bidding', { params: { page, size } })
 }
+
+// The auctions the signed-in seller created, with bid counts (API.md 5.11). status '' means every status.
+export function getMySelling({ status, page, size }) {
+  return apiClient.get('/api/v1/auctions/mine/selling', { params: { status: status || undefined, page, size } })
+}

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isSeller } from '../utils/mySelling'
 import { scrollToTop } from './landing/useSmoothScroll'
 
 export default function Header() {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
@@ -68,6 +69,11 @@ export default function Header() {
             <Link to="/me/bidding" className={linkClass}>
               Phiên của tôi
             </Link>
+            {isSeller(user) && (
+              <Link to="/me/selling" className={linkClass}>
+                Phiên đang bán
+              </Link>
+            )}
             <Link to="/me" className={linkClass}>
               Hồ sơ
             </Link>
