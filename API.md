@@ -578,6 +578,29 @@ Các phiên mà người trong token đã từng đặt giá, phiên có lượt
 
 `productName` là tên sản phẩm, lấy từ bản sao auction-service giữ theo sự kiện của catalog nên không cần gọi thêm `GET /products/{id}`. Nó là `null` với sản phẩm tạo trước khi có trường này, cho tới lần sản phẩm đó được đổi tên; khi đó FE hiển thị tên dự phòng hoặc tự gọi `GET /products/{id}`.
 
+### 5.11. Các phiên của tôi (người bán)
+
+`GET /api/v1/auctions/mine/selling?status=&page=0&size=20` — cần đăng nhập và quyền `AUCTION.CREATE` (người bán)
+
+Các phiên mà người trong token đã tạo, phiên mới nhất đứng đầu. Khác với `GET /auctions?sellerId=` (công khai) ở chỗ
+không cần biết id của mình và mỗi phiên có thêm số lượt giá và số người đặt giá. `status` tùy chọn (`PENDING`, `ACTIVE`,
+`ENDED`, `CANCELLED`, không phân biệt hoa thường); `size` từ 1 đến 100. Giá trị sai thì `400 VALIDATION_ERROR` với
+`fieldErrors` ở `status`, `page` hoặc `size`. Người mua (thiếu `AUCTION.CREATE`) nhận `403`.
+
+```json
+// Response 200
+{ "success": true, "data": [ {
+    "auctionId": "...", "productId": "...", "productName": "Đồng hồ cổ", "status": "ACTIVE",
+    "startingPrice": 100000.00, "bidIncrement": 10000.00, "currentHighestBid": 130000.00,
+    "startTime": "2026-11-09T01:00:00Z", "endTime": "2026-11-09T03:00:00Z",
+    "bidCount": 7, "bidderCount": 3,
+    "winnerId": null, "finalPrice": null, "paymentDeadline": null, "paidAt": null
+} ] }
+```
+`bidCount` tính cả các lượt giá do hệ thống đặt thay cho mức tối đa (5.8); `bidderCount` là số người khác nhau đã đặt giá.
+Phiên chưa có lượt giá nào có cả hai bằng `0`. `productName` giống mục 5.10 (có thể `null` với sản phẩm cũ). Khi phiên
+`ENDED` có người thắng thì `winnerId`, `finalPrice`, `paymentDeadline` được điền; `paidAt` điền khi đã thanh toán.
+
 ---
 
 ## 6. Mua trực tiếp & Thanh toán — Commerce (`commerce-service`)
