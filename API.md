@@ -31,6 +31,21 @@ Dùng cho FE tích hợp.
 | 404 | Không tìm thấy resource |
 | 409 | Xung đột nghiệp vụ (vd email đã tồn tại, đặt giá quá thấp, request đã duyệt rồi) |
 
+**Body hoặc tham số sai kiểu cũng là 400, không còn là 500** (từ common-libs 1.17.1). Hai trường hợp:
+
+- Body rỗng hoặc không phải JSON hợp lệ (thiếu dấu ngoặc, chữ thừa): `400 MALFORMED_REQUEST`, không có `fieldErrors`.
+- Một trường sai kiểu, trong body hoặc ở query (`?page=abc`): `400 VALIDATION_ERROR` với `fieldErrors[0].field` là tên
+  trường (vd `amount`, `items[1].quantity`, `page`) và `message` là một trong:
+
+| `message` | Khi nào |
+|---|---|
+| `must be a number` | chữ ở chỗ cần số (`"amount": "abc"`, `page=abc`) |
+| `must be true or false` | giá trị không phải boolean |
+| `must be a valid ISO-8601 date or time` | ngày giờ không đúng dạng (`"yesterday"`) |
+| `must be one of [A, B]` | giá trị enum không có trong danh sách |
+| `must be a valid UUID` | không phải UUID |
+| `has an invalid type` | cấu trúc sai (vd gửi chuỗi vào chỗ cần danh sách) |
+
 ### Mã lỗi `error.code` hay gặp ở nhiều màn hình
 
 | HTTP | `error.code` | Ý nghĩa |
