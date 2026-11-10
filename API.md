@@ -405,9 +405,13 @@ Lỗi `403 PRODUCT_NOT_OWNED` nếu không phải chủ sản phẩm và không 
     "currentHighestBid": 550000.00, "currentHighestBidderId": "...",
     "status": "ACTIVE", "startTime": "...", "endTime": "...",
     "extensionCount": 0, "winnerId": null, "finalPrice": null, "paymentDeadline": null,
-    "paidAt": null
+    "paidAt": null, "hasReserve": true, "reserveMet": false
 } }
 ```
+`hasReserve` cho biết người bán có đặt **giá sàn** không, và `reserveMet` cho biết giá cao nhất đã chạm giá sàn chưa
+(`true` khi không có giá sàn; `false` khi có giá sàn mà chưa ai đặt tới). **Con số giá sàn không bao giờ có trong response
+công khai**, chỉ người bán xem được ở mục 5.11. Chi tiết luật giá sàn ở mục 5.3.
+
 `status`: `PENDING` (chưa tới giờ bắt đầu) → `ACTIVE` (đang diễn ra) → `ENDED` (đã kết thúc,
 có thể có `winnerId`) hoặc `CANCELLED`.
 
@@ -434,10 +438,17 @@ chi tiết sản phẩm cần gọi cái này để biết có đấu giá hay k
   "productId": "...",
   "startingPrice": 500000,
   "bidIncrement": 50000,
+  "reservePrice": 800000,
   "startTime": "2026-10-07T02:15:31Z",
   "endTime": "2026-10-07T04:15:41Z"
 }
 ```
+`reservePrice` (giá sàn) **không bắt buộc**. Đó là mức thấp nhất người bán chịu bán, được giấu với người đặt giá: nếu phiên
+kết thúc mà giá cao nhất vẫn thấp hơn giá sàn thì **không bán được**, giống phiên không ai đặt giá (`ENDED`, không có
+`winnerId`, người thắng không bị tạo đơn, sản phẩm được nhả kho như thường). Giá sàn phải lớn hơn 0 và **không thấp hơn
+`startingPrice`**, sai thì `400 VALIDATION_ERROR` với `fieldErrors` ở `reservePrice`. Giá cao nhất bằng đúng giá sàn thì tính
+là đạt. Giá sàn chỉ đặt hoặc đổi được khi phiên còn `PENDING` (mục 5.4).
+
 Phiên mới luôn bắt đầu ở `status: "PENDING"` — có 1 job chạy ngầm mỗi 10 giây tự chuyển
 `PENDING → ACTIVE` khi tới `startTime`, và `ACTIVE → ENDED` khi tới `endTime`. FE không cần tự
 chuyển trạng thái.
@@ -464,8 +475,9 @@ lại `ACTIVE`, seller bán tiếp hoặc tạo phiên mới được; đơn cò
 
 Body sửa giống hệt body tạo (không có `productId`):
 ```json
-{ "startingPrice": 500000, "bidIncrement": 50000, "startTime": "...", "endTime": "..." }
+{ "startingPrice": 500000, "bidIncrement": 50000, "reservePrice": 800000, "startTime": "...", "endTime": "..." }
 ```
+Sửa là **thay toàn bộ**: bỏ trống `reservePrice` nghĩa là xóa giá sàn đang có.
 Lỗi: `403 AUCTION_NOT_OWNED` nếu sửa/hủy phiên của người khác (ADMIN muốn hủy dùng `admin-cancel`);
 `409 AUCTION_NOT_EDITABLE` nếu sửa phiên không còn `PENDING`; `409 AUCTION_NOT_CANCELLABLE` nếu seller tự hủy
 phiên đã có người đặt giá hoặc đã kết thúc/bị hủy, hoặc admin hủy phiên đã kết thúc/bị hủy.
@@ -609,9 +621,14 @@ không cần biết id của mình và mỗi phiên có thêm số lượt giá 
     "startingPrice": 100000.00, "bidIncrement": 10000.00, "currentHighestBid": 130000.00,
     "startTime": "2026-11-09T01:00:00Z", "endTime": "2026-11-09T03:00:00Z",
     "bidCount": 7, "bidderCount": 3,
-    "winnerId": null, "finalPrice": null, "paymentDeadline": null, "paidAt": null
+    "winnerId": null, "finalPrice": null, "paymentDeadline": null, "paidAt": null,
+    "reservePrice": 200000.00, "reserveMet": false
 } ] }
 ```
+`reservePrice` là giá sàn của chính người bán (`null` nếu không đặt); đây là **nơi duy nhất** thấy con số, và `reserveMet`
+cho biết giá cao nhất đã chạm giá sàn chưa. Phiên `ENDED` mà `reserveMet` là `false` nghĩa là không bán được vì chưa tới giá
+sàn (không có `winnerId`).
+
 `bidCount` tính cả các lượt giá do hệ thống đặt thay cho mức tối đa (5.8); `bidderCount` là số người khác nhau đã đặt giá.
 Phiên chưa có lượt giá nào có cả hai bằng `0`. `productName` giống mục 5.10 (có thể `null` với sản phẩm cũ). Khi phiên
 `ENDED` có người thắng thì `winnerId`, `finalPrice`, `paymentDeadline` được điền; `paidAt` điền khi đã thanh toán.
