@@ -956,6 +956,23 @@ Mới nhất đứng đầu. Tham số (đều tùy chọn):
 
 Lưu ý: trước đây endpoint này trả toàn bộ, giờ mặc định chỉ trả 20 thông báo đầu. Trang cuối trả mảng rỗng.
 
+Mỗi thông báo có `eventType` cho biết nó đến từ sự kiện nào, và chỉ gửi cho **một** người:
+
+| `eventType` | Gửi cho | Nội dung |
+|---|---|---|
+| `UserRegistered` | người vừa đăng ký | chào mừng |
+| `BidPlaced` | người đặt giá | xác nhận đã đặt giá |
+| `Outbid` | người vừa bị vượt giá | giá cao nhất hiện tại |
+| `AuctionWon` | người thắng | chúc mừng, giá cuối |
+| `AuctionSettled` | người thắng | đã hoàn tất thanh toán |
+| `AuctionPaymentTimeout` | người thắng | quá hạn thanh toán, giao dịch không còn hiệu lực |
+| `OrderPaid` | **người bán** | người mua đã thanh toán, hãy chuẩn bị giao hàng |
+| `OrderShipped` | **người mua** | đơn hàng đã được giao đi |
+| `PasswordResetRequested` | người yêu cầu | mã đặt lại mật khẩu |
+
+Phiên bị hủy, phiên kết thúc không có người mua và đơn bị hủy **chưa** có thông báo, vì các sự kiện đó không mang id người
+nhận.
+
 ### 7.2. Đánh dấu đã đọc
 
 `PATCH /api/v1/notifications/{id}/read` — cần đăng nhập. Không có body, `data: null`.
