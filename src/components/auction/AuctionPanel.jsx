@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { applyBid, mergeBid, myStanding, nextMinBid } from '../../utils/auctionLive'
 import { bidErrorMessage } from '../../utils/apiError'
 import { STANDING } from '../../utils/standing'
+import SellerReputation from './SellerReputation'
 import { useAuctionStream } from './useAuctionStream'
 
 const STATUS_LABEL = {
@@ -118,6 +119,8 @@ export default function AuctionPanel({ initial }) {
         {money(auction.bidIncrement)}
         {auction.status === 'ACTIVE' && <span className="ml-2 text-green-700">· cập nhật trực tiếp</span>}
       </p>
+
+      <SellerReputation sellerId={auction.sellerId} />
 
       {standing && (
         <p className={`mt-3 text-sm border rounded px-3 py-2 ${STANDING[standing].className}`} role="status">
