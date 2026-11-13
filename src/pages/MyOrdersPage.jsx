@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMyOrders } from '../api/orders'
+import OrderActions from '../components/OrderActions'
 import PageHero from '../components/PageHero'
 import { errorMessage } from '../utils/apiError'
 import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState } from '../utils/myOrders'
-import { addressLine } from '../utils/sellerOrders'
+import { addressLine, replaceOrder } from '../utils/sellerOrders'
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
 const when = (value) => new Date(value).toLocaleString('vi-VN')
@@ -14,6 +15,7 @@ export default function MyOrdersPage() {
   const [filter, setFilter] = useState('ALL')
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
+  const [notice, setNotice] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -32,6 +34,11 @@ export default function MyOrdersPage() {
   const reload = useCallback(() => {
     setState((current) => ({ ...current, status: 'loading' }))
     setAttempt((value) => value + 1)
+  }, [])
+
+  // The order the server answered replaces the old one in the list.
+  const changed = useCallback((updated) => {
+    setState((current) => ({ ...current, orders: replaceOrder(current.orders, updated) }))
   }, [])
 
   const shown = filterMyOrders(state.orders, filter)
@@ -54,6 +61,12 @@ export default function MyOrdersPage() {
             </button>
           ))}
         </div>
+
+        {notice && (
+          <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-sm ${notice.kind === 'error' ? 'text-red-600' : 'text-green-700'}`}>
+            {notice.text}
+          </p>
+        )}
 
         {state.status === 'loading' && <p role="status" className="mt-6 text-sm text-gray-500">Đang tải...</p>}
         {state.status === 'error' && (
@@ -107,6 +120,8 @@ export default function MyOrdersPage() {
                 </p>
                 {order.paidAt && <p className="mt-1 text-xs text-gray-500">Đã thanh toán lúc {when(order.paidAt)}</p>}
                 {order.shippedAt && <p className="mt-1 text-sm text-green-700">Người bán đã giao lúc {when(order.shippedAt)}</p>}
+
+                <OrderActions order={order} onChanged={changed} onStale={reload} onNotice={setNotice} />
               </li>
             )
           })}
