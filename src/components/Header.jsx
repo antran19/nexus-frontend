@@ -71,6 +71,9 @@ export default function Header() {
             <Link to="/me/bidding" className={linkClass}>
               Phiên của tôi
             </Link>
+            <Link to="/me/orders" className={linkClass}>
+              Đơn của tôi
+            </Link>
             {isSeller(user) && (
               <>
                 <Link to="/me/selling" className={linkClass}>
