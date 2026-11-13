@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getMyProfile, updateMyProfile } from '../api/users'
+import BecomeSeller from '../components/BecomeSeller'
 import PageHero from '../components/PageHero'
 import { errorMessage } from '../utils/apiError'
 import { fieldErrorMap, isChanged, toUpdateBody, validateProfile } from '../utils/profileForm'
+import { canRequestSeller } from '../utils/sellerRequests'
 
 const ROLE_LABEL = {
   BUYER: 'Người mua',
@@ -142,10 +144,15 @@ export default function ProfilePage() {
     )
   }
 
+  const askToSell = canRequestSeller({ role: profile?.roleCode })
+
   return (
     <>
       <PageHero eyebrow="Hồ sơ" title={profile?.fullName || 'Tài khoản'} />
-      <div className="max-w-5xl mx-auto px-6 py-12">{body}</div>
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        {body}
+        {askToSell && <BecomeSeller />}
+      </div>
     </>
   )
 }
