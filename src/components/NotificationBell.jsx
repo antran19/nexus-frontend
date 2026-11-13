@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getMyNotifications, getUnreadCount } from '../api/notifications'
-import { badgeLabel, POLL_INTERVAL_MS, shortenIds, timeAgo } from '../utils/notifications'
+import { useNavigate } from 'react-router-dom'
+import { getAuction } from '../api/auctions'
+import { getMyNotifications, getUnreadCount, markAllNotificationsRead, markNotificationRead } from '../api/notifications'
+import { badgeLabel, markReadInList, notificationTarget, POLL_INTERVAL_MS, shortenIds, timeAgo } from '../utils/notifications'
 
 // Unread count for the badge: read once, then every 30 seconds and whenever the tab gets focus back.
 // A failed poll keeps the last number; the bell must never break the header.
@@ -30,6 +32,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [list, setList] = useState({ status: 'idle', items: [] })
   const rootRef = useRef(null)
+  const navigate = useNavigate()
 
   const load = useCallback(() => {
     setList((current) => ({ ...current, status: 'loading' }))
@@ -45,6 +48,32 @@ export default function NotificationBell() {
       load()
       refreshCount()
     }
+  }
+
+  // Read it, then go where it points. An auction-only notice (outbid, paid, shipped) looks the product up first;
+  // if that fails the notice is still marked read and the person stays where they are.
+  async function openItem(item) {
+    setList((current) => ({ ...current, items: markReadInList(current.items, item.id) }))
+    if (!item.read) {
+      markNotificationRead(item.id).then(refreshCount, () => refreshCount())
+    }
+    const target = notificationTarget(item)
+    if (!target) return
+    setOpen(false)
+    try {
+      const productId = target.productId ?? (await getAuction(target.auctionId)).data?.productId
+      if (productId) navigate(`/products/${productId}`)
+    } catch {
+      // the auction may be gone; nothing to open
+    }
+  }
+
+  function readAll() {
+    setList((current) => ({ ...current, items: current.items.map((entry) => ({ ...entry, read: true })) }))
+    markAllNotificationsRead().then(refreshCount, () => {
+      refreshCount()
+      load()
+    })
   }
 
   // Close on a click outside and on Escape.
@@ -88,7 +117,14 @@ export default function NotificationBell() {
 
       {open && (
         <div role="region" aria-label="Thông báo" className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-lg bg-white text-ink shadow-xl">
-          <div className="border-b border-black/10 px-4 py-3 text-sm font-semibold">Thông báo</div>
+          <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
+            <span className="text-sm font-semibold">Thông báo</span>
+            {count > 0 && (
+              <button type="button" onClick={readAll} className="text-xs text-black/60 underline hover:text-black">
+                Đánh dấu tất cả đã đọc
+              </button>
+            )}
+          </div>
           <div className="max-h-96 overflow-y-auto">
             {list.status === 'loading' && list.items.length === 0 && (
               <p role="status" className="px-4 py-6 text-center text-sm text-black/60">Đang tải…</p>
@@ -104,9 +140,15 @@ export default function NotificationBell() {
             )}
             <ul>
               {list.items.map((item) => (
-                <li key={item.id} className={`border-b border-black/5 px-4 py-3 text-sm ${item.read ? 'text-black/60' : 'bg-gold/10'}`}>
-                  <p className={item.read ? '' : 'font-medium'}>{shortenIds(item.message)}</p>
-                  <p className="mt-1 text-xs text-black/50">{timeAgo(item.occurredAt)}</p>
+                <li key={item.id} className="border-b border-black/5">
+                  <button
+                    type="button"
+                    onClick={() => openItem(item)}
+                    className={`block w-full px-4 py-3 text-left text-sm hover:bg-black/5 ${item.read ? 'text-black/60' : 'bg-gold/10'}`}
+                  >
+                    <span className={`block ${item.read ? '' : 'font-medium'}`}>{shortenIds(item.message)}</span>
+                    <span className="mt-1 block text-xs text-black/50">{timeAgo(item.occurredAt)}</span>
+                  </button>
                 </li>
               ))}
             </ul>
