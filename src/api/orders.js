@@ -23,3 +23,13 @@ export function confirmPayment(orderId, sessionId) {
 export function cancelOrder(orderId) {
   return apiClient.post(`/api/v1/orders/${orderId}/cancel`)
 }
+
+// Seller: every order that holds at least one of my products, in any status, newest first (commerce-service).
+export function getSellingOrders() {
+  return apiClient.get('/api/v1/orders/selling')
+}
+
+// Seller: "I shipped this". Only a PAID order that has not been shipped yet; answers the order with shippedAt set.
+export function markOrderShipped(orderId) {
+  return apiClient.post(`/api/v1/orders/${orderId}/mark-shipped`)
+}
