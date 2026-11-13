@@ -5,6 +5,8 @@ import PageHero from '../components/PageHero'
 import { useProductNames } from '../components/useProductNames'
 import { errorMessage } from '../utils/apiError'
 import { appendPage, FILTERS, filterItems, hasMorePages, PAGE_SIZE, summarize } from '../utils/myBidding'
+import RateSeller from '../components/auction/RateSeller'
+import { canRate } from '../utils/ratings'
 import { STANDING } from '../utils/standing'
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
@@ -119,6 +121,7 @@ export default function MyBiddingPage() {
                     </div>
                   </dl>
                 </Link>
+                {canRate(item) && <RateSeller auctionId={item.auctionId} />}
               </li>
             )
           })}
