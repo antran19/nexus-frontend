@@ -42,3 +42,13 @@ test('marking one as read leaves the others and the original list alone', () => 
   assert.deepEqual(next, [{ id: 'a', read: true }, { id: 'b', read: false }])
   assert.equal(list[0].read, false)
 })
+
+test('full ids in a message are shortened to their first 8 characters', async () => {
+  const { shortenIds } = await import('./notifications.js')
+  assert.equal(
+    shortenIds('Bạn đã bị vượt giá trong phiên 6a320d9e-5841-4908-9720-066780e0bafc, giá hiện tại là 130000'),
+    'Bạn đã bị vượt giá trong phiên #6a320d9e, giá hiện tại là 130000',
+  )
+  assert.equal(shortenIds('Chào mừng An'), 'Chào mừng An')
+  assert.equal(shortenIds(null), '')
+})

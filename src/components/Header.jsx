@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isSeller } from '../utils/mySelling'
 import { scrollToTop } from './landing/useSmoothScroll'
+import NotificationBell from './NotificationBell'
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth()
@@ -77,6 +78,7 @@ export default function Header() {
             <Link to="/me" className={linkClass}>
               Hồ sơ
             </Link>
+            <NotificationBell />
             <button onClick={handleLogout} className={buttonClass}>
               Đăng xuất
             </button>

@@ -47,3 +47,12 @@ export function notificationTarget(notification) {
 export function markReadInList(list, id) {
   return list.map((item) => (item.id === id ? { ...item, read: true } : item))
 }
+
+// The server's text names auctions and orders by their full UUID, which is unreadable on screen:
+// show the first 8 characters instead ("phiên đấu giá #1a2b3c4d").
+export function shortenIds(text) {
+  return String(text ?? '').replace(
+    /\b([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+    '#$1',
+  )
+}
