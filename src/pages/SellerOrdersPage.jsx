@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSellingOrders } from '../api/orders'
+import { getSellingOrders, markOrderShipped } from '../api/orders'
 import PageHero from '../components/PageHero'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import { isSeller } from '../utils/mySelling'
 import {
-  addressLine, countByTab, filterOrders, myItems, myTotal, ORDER_TABS, STATUS_LABEL,
+  addressLine, countByTab, filterOrders, myItems, myTotal, ORDER_TABS, replaceOrder, shipErrorMessage, STATUS_LABEL,
 } from '../utils/sellerOrders'
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
@@ -27,6 +27,10 @@ export default function SellerOrdersPage() {
   const [tab, setTab] = useState('TO_SHIP')
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
+  // Shipping is a one-way step, so it asks once more: confirmingId is the order whose button was pressed.
+  const [confirmingId, setConfirmingId] = useState('')
+  const [busyId, setBusyId] = useState('')
+  const [notice, setNotice] = useState(null)
 
   useEffect(() => {
     if (!seller) return undefined
@@ -47,6 +51,22 @@ export default function SellerOrdersPage() {
     setState((current) => ({ ...current, status: 'loading' }))
     setAttempt((value) => value + 1)
   }, [])
+
+  async function ship(order) {
+    setBusyId(order.id)
+    setNotice(null)
+    try {
+      const { data } = await markOrderShipped(order.id)
+      setState((current) => ({ ...current, orders: replaceOrder(current.orders, data) }))
+      setNotice({ kind: 'success', text: `Đã đánh dấu đơn #${order.id.slice(0, 8)} là đã giao. Người mua sẽ nhận được thông báo.` })
+    } catch (err) {
+      setNotice({ kind: 'error', text: shipErrorMessage(err) })
+      reload()
+    } finally {
+      setBusyId('')
+      setConfirmingId('')
+    }
+  }
 
   if (!seller) {
     return (
@@ -81,6 +101,12 @@ export default function SellerOrdersPage() {
             </button>
           ))}
         </div>
+
+        {notice && (
+          <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-sm ${notice.kind === 'error' ? 'text-red-600' : 'text-green-700'}`}>
+            {notice.text}
+          </p>
+        )}
 
         {state.status === 'loading' && <p role="status" className="mt-6 text-sm text-gray-500">Đang tải...</p>}
         {state.status === 'error' && (
@@ -125,6 +151,35 @@ export default function SellerOrdersPage() {
                 <span className="text-gray-500">Giao tới: </span>{addressLine(order.shippingAddress)}
               </p>
               {order.shippedAt && <p className="mt-1 text-sm text-green-700">Đã giao lúc {when(order.shippedAt)}</p>}
+
+              {order.status === 'PAID' && !order.shippedAt && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {confirmingId === order.id ? (
+                    <>
+                      <span className="text-sm text-gray-700">Bạn đã gửi hàng cho người mua?</span>
+                      <button
+                        type="button"
+                        disabled={busyId === order.id}
+                        onClick={() => ship(order)}
+                        className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+                      >
+                        {busyId === order.id ? 'Đang gửi...' : 'Xác nhận đã giao'}
+                      </button>
+                      <button type="button" disabled={busyId === order.id} onClick={() => setConfirmingId('')} className="text-sm text-gray-600 px-2">
+                        Hủy
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setConfirmingId(order.id); setNotice(null) }}
+                      className="border border-ink text-ink rounded px-4 py-1.5 text-sm hover:bg-ink hover:text-white transition-colors"
+                    >
+                      Đánh dấu đã giao
+                    </button>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>
