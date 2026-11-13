@@ -33,3 +33,8 @@ export function getSellingOrders() {
 export function markOrderShipped(orderId) {
   return apiClient.post(`/api/v1/orders/${orderId}/mark-shipped`)
 }
+
+// Buyer: every order I placed, in any status (commerce-service). Orders won at an auction are in it too.
+export function getMyOrders() {
+  return apiClient.get('/api/v1/orders/me')
+}
