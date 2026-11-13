@@ -8,3 +8,8 @@ export function getMyProfile() {
 export function updateMyProfile({ fullName, phone }) {
   return apiClient.put('/api/v1/users/me', { fullName, phone })
 }
+
+// One user by id: { id, email, fullName }. Needs the USER.VIEW privilege (admin and support staff).
+export function getUserById(id) {
+  return apiClient.get(`/api/v1/users/${id}`)
+}
