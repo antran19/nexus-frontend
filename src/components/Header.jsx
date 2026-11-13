@@ -72,9 +72,14 @@ export default function Header() {
               Phiên của tôi
             </Link>
             {isSeller(user) && (
-              <Link to="/me/selling" className={linkClass}>
-                Phiên đang bán
-              </Link>
+              <>
+                <Link to="/me/selling" className={linkClass}>
+                  Phiên đang bán
+                </Link>
+                <Link to="/me/selling/orders" className={linkClass}>
+                  Đơn cần giao
+                </Link>
+              </>
             )}
             {isAdmin(user) && (
               <Link to="/admin/seller-requests" className={linkClass}>
