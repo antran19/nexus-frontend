@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isSeller } from '../utils/mySelling'
+import { isStaff } from '../utils/adminOrders'
 import { isAdmin } from '../utils/sellerRequests'
 import { scrollToTop } from './landing/useSmoothScroll'
 import NotificationBell from './NotificationBell'
@@ -87,6 +88,11 @@ export default function Header() {
             {isAdmin(user) && (
               <Link to="/admin/seller-requests" className={linkClass}>
                 Duyệt người bán
+              </Link>
+            )}
+            {isStaff(user) && (
+              <Link to="/admin/orders" className={linkClass}>
+                Quản lý đơn
               </Link>
             )}
             <Link to="/me" className={linkClass}>
