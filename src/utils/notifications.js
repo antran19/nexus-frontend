@@ -33,10 +33,22 @@ export function parsePayload(notification) {
   }
 }
 
-// Where a click on a notification should lead. Auction events name the product directly (won) or only the
-// auction (outbid, paid, shipped), so the page for an auction has to look the product up first.
-// Returns { productId } | { auctionId } | null (welcome and password-reset notices lead nowhere).
+// What happens to an order after an auction is won lives on the order pages, not on the product page: the winner
+// pays there, the buyer sees the parcel was shipped there, and the seller finds what to ship there.
+export const ORDER_PAGE_BY_EVENT = {
+  AuctionWon: '/me/orders',
+  AuctionSettled: '/me/orders',
+  AuctionPaymentTimeout: '/me/orders',
+  OrderShipped: '/me/orders',
+  OrderPaid: '/me/selling/orders',
+}
+
+// Where a click on a notification should lead. Events about an order go to its order page; the others name the
+// product directly or only the auction (outbid), so the page for an auction has to look the product up first.
+// Returns { path } | { productId } | { auctionId } | null (welcome and password-reset notices lead nowhere).
 export function notificationTarget(notification) {
+  const page = ORDER_PAGE_BY_EVENT[notification?.eventType]
+  if (page) return { path: page }
   const payload = parsePayload(notification)
   if (typeof payload.productId === 'string' && payload.productId) return { productId: payload.productId }
   if (typeof payload.auctionId === 'string' && payload.auctionId) return { auctionId: payload.auctionId }

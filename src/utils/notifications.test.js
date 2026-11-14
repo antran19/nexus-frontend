@@ -31,6 +31,20 @@ test('a won auction leads to its product, an outbid one to its auction', () => {
   assert.deepEqual(notificationTarget({ payload: '{"auctionId":"a1","newHighestBid":120}' }), { auctionId: 'a1' })
 })
 
+test('events about an order lead to the order pages', () => {
+  const payload = '{"auctionId":"a1","productId":"p1","orderId":"o1"}'
+  assert.deepEqual(notificationTarget({ eventType: 'OrderShipped', payload }), { path: '/me/orders' })
+  assert.deepEqual(notificationTarget({ eventType: 'AuctionWon', payload }), { path: '/me/orders' })
+  assert.deepEqual(notificationTarget({ eventType: 'AuctionSettled', payload }), { path: '/me/orders' })
+  assert.deepEqual(notificationTarget({ eventType: 'AuctionPaymentTimeout', payload }), { path: '/me/orders' })
+  assert.deepEqual(notificationTarget({ eventType: 'OrderPaid', payload }), { path: '/me/selling/orders' })
+})
+
+test('an outbid or bid notice still leads to the auction, whatever its event name', () => {
+  assert.deepEqual(notificationTarget({ eventType: 'Outbid', payload: '{"auctionId":"a1"}' }), { auctionId: 'a1' })
+  assert.deepEqual(notificationTarget({ eventType: 'BidPlaced', payload: '{"auctionId":"a1"}' }), { auctionId: 'a1' })
+})
+
 test('a welcome notice leads nowhere', () => {
   assert.equal(notificationTarget({ payload: '{"userId":"u1","fullName":"An"}' }), null)
   assert.equal(notificationTarget({ payload: null }), null)

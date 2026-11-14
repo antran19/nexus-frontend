@@ -60,6 +60,10 @@ export default function NotificationBell() {
     const target = notificationTarget(item)
     if (!target) return
     setOpen(false)
+    if (target.path) {
+      navigate(target.path)
+      return
+    }
     try {
       const productId = target.productId ?? (await getAuction(target.auctionId)).data?.productId
       if (productId) navigate(`/products/${productId}`)
