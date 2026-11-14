@@ -38,3 +38,32 @@ export function markOrderShipped(orderId) {
 export function getMyOrders() {
   return apiClient.get('/api/v1/orders/me')
 }
+
+// Staff (admin, support): every order of every buyer, any status (commerce-service).
+export function getAllOrders() {
+  return apiClient.get('/api/v1/orders')
+}
+
+// Staff: refunds a PAID order and sends the money back through the payment provider. The reason is required.
+export function refundOrder(orderId, reason) {
+  return apiClient.post(`/api/v1/orders/${orderId}/refund`, { reason })
+}
+
+// Staff: opens a return request for an order that was shipped and refunded. Answers { id, orderId, reason, status, ... }.
+export function createReturnRequest(orderId, reason) {
+  return apiClient.post(`/api/v1/orders/${orderId}/returns`, { reason })
+}
+
+// Staff: return requests in one status (REQUESTED, RECEIVED or REJECTED), newest first.
+export function listReturnRequests(status = 'REQUESTED') {
+  return apiClient.get('/api/v1/returns', { params: { status } })
+}
+
+// Staff: the goods came back; the stock is restocked.
+export function receiveReturn(returnId) {
+  return apiClient.post(`/api/v1/returns/${returnId}/receive`)
+}
+
+export function rejectReturn(returnId) {
+  return apiClient.post(`/api/v1/returns/${returnId}/reject`)
+}
