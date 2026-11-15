@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { getAuction, getBidHistory, getMyAutoBid, placeBid, setAutoBid } from '../../api/auctions'
 import { useAuth } from '../../context/AuthContext'
-import { applyBid, bidLadder, mergeBid, myStanding, nextMinBid } from '../../utils/auctionLive'
+import { applyBid, bidLadder, endingSoon, mergeBid, myStanding, nextMinBid, timeLeft } from '../../utils/auctionLive'
 import { bidErrorMessage } from '../../utils/apiError'
 import { STANDING } from '../../utils/standing'
 import SellerReputation from './SellerReputation'
@@ -16,6 +16,17 @@ const STATUS_LABEL = {
 }
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
+
+// The clock of the countdown: ticks every second while the auction is live, stands still otherwise.
+function useNow(active) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!active) return undefined
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [active])
+  return now
+}
 
 // One auction on the product page: the live price, who is ahead, the bid box and the maximum box.
 // `initial` is the auction as first loaded; everything after that comes from the stream and refreshes.
@@ -55,6 +66,17 @@ export default function AuctionPanel({ initial }) {
   useEffect(() => {
     refresh().catch(() => {})
   }, [refresh])
+
+  // At zero the auction is over for the person even if the server has not closed it yet: no more bidding, and the
+  // server is asked every few seconds until it has. A bid pushed meanwhile (anti-sniping) moves the end time and
+  // the panel is live again.
+  const now = useNow(auction.status === 'ACTIVE')
+  const timeIsUp = auction.status === 'ACTIVE' && Date.parse(auction.endTime) <= now
+  useEffect(() => {
+    if (!timeIsUp) return undefined
+    const timer = setInterval(() => refresh().catch(() => {}), 3000)
+    return () => clearInterval(timer)
+  }, [timeIsUp, refresh])
 
   useAuctionStream(
     auction.id,
@@ -105,19 +127,28 @@ export default function AuctionPanel({ initial }) {
   const price = auction.currentHighestBid ?? auction.startingPrice
 
   return (
-    <div className="mt-6 border border-gray-200 bg-white shadow-sm rounded-xl p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500">{STATUS_LABEL[auction.status] ?? auction.status}</span>
-        <span className="text-sm text-gray-500">Kết thúc: {new Date(auction.endTime).toLocaleString('vi-VN')}</span>
+    <div className="mt-6 border border-tray bg-white shadow-sm rounded-2xl p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="rounded-full border border-tray bg-peach px-3 py-1 text-xs font-semibold text-brand">{STATUS_LABEL[auction.status] ?? auction.status}</span>
+        {auction.status === 'ACTIVE' && (
+          <span
+            role="timer"
+            aria-label={`Còn lại ${timeLeft(auction.endTime, now)}`}
+            className={`rounded-full px-3 py-1 text-sm font-semibold tabular-nums ${endingSoon(auction.endTime, now) ? 'bg-red-600 text-white' : 'bg-cocoa text-white'}`}
+          >
+            {timeLeft(auction.endTime, now)}
+          </span>
+        )}
       </div>
+      <p className="mt-1 text-right text-xs text-gray-500">Kết thúc: {new Date(auction.endTime).toLocaleString('vi-VN')}</p>
 
-      <p className="text-3xl font-semibold text-gray-900 mt-2" aria-live="polite">
+      <p className="font-display text-4xl font-extrabold text-brand mt-2" aria-live="polite">
         {money(price)}
       </p>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-600">
         {auction.currentHighestBid ? 'Giá cao nhất hiện tại' : 'Giá khởi điểm'} · bước giá tối thiểu{' '}
         {money(auction.bidIncrement)}
-        {auction.status === 'ACTIVE' && <span className="ml-2 text-green-700">· cập nhật trực tiếp</span>}
+        {auction.status === 'ACTIVE' && !timeIsUp && <span className="ml-2 text-green-700">· cập nhật trực tiếp</span>}
       </p>
 
       <SellerReputation sellerId={auction.sellerId} />
@@ -128,8 +159,10 @@ export default function AuctionPanel({ initial }) {
         </p>
       )}
 
-      {auction.status !== 'ACTIVE' ? (
-        <p className="text-sm text-gray-500 mt-4">Phiên đấu giá này hiện không nhận giá mới.</p>
+      {auction.status !== 'ACTIVE' || timeIsUp ? (
+        <p className="text-sm text-gray-500 mt-4">
+          {timeIsUp ? 'Đã hết giờ, hệ thống đang chốt kết quả phiên.' : 'Phiên đấu giá này hiện không nhận giá mới.'}
+        </p>
       ) : !isAuthenticated ? (
         <Link
           to="/login"
