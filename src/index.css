@@ -6,10 +6,15 @@
   --color-gold: #c9a24a;
   --color-gold-soft: #e3c47d;
   --color-cream: #f1ede6;
-  /* Marketplace look from the Stitch design: warm white page, orange actions. */
-  --color-brand: #f26b1d;
-  --color-brand-dark: #d95a10;
-  --color-peach: #fff4ec;
+  /* Marketplace look from the Stitch design system: warm white page, brown-orange actions, amber highlights. */
+  --color-brand: #9d4300;
+  --color-brand-dark: #6b2e00;
+  --color-amber: #f5a623;
+  --color-peach: #fff8f6;
+  --color-tray: #fde3d9;
+  --color-cocoa: #261913;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-sans: Inter, system-ui, "Segoe UI", Roboto, sans-serif;
   --animate-marquee: marquee 40s linear infinite;
 
   @keyframes marquee {
@@ -34,7 +39,7 @@
 
 body {
   margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
 }
 
 html {

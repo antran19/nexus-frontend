@@ -1,16 +1,15 @@
-// Dark title band shared by the inner pages, matching the landing page's ink + gold look.
+// Title band shared by the inner pages, in the warm marketplace look of the Stitch design.
 // `children` goes in a right-hand slot (search box, step hint...).
 export default function PageHero({ eyebrow, title, subtitle, children }) {
   return (
-    <section className="relative bg-ink text-white border-b border-gold/30">
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent opacity-60" />
-      <div className="max-w-6xl mx-auto px-6 py-12 md:py-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <section className="bg-white border-b border-tray">
+      <div className="max-w-6xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           {eyebrow && (
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">{eyebrow}</p>
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-brand">{eyebrow}</p>
           )}
-          <h1 className="mt-3 text-3xl md:text-5xl font-light leading-tight">{title}</h1>
-          {subtitle && <p className="mt-3 max-w-xl text-white/70">{subtitle}</p>}
+          <h1 className="mt-2 font-display text-3xl md:text-4xl font-bold leading-tight text-cocoa">{title}</h1>
+          {subtitle && <p className="mt-2 max-w-xl text-gray-600">{subtitle}</p>}
         </div>
         {children}
       </div>

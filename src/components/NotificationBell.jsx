@@ -27,7 +27,8 @@ function useUnreadCount() {
   return [count, refresh]
 }
 
-export default function NotificationBell() {
+// tone: 'dark' for the dark bar of the landing page, 'light' for the store header.
+export default function NotificationBell({ tone = 'dark' }) {
   const [count, refreshCount] = useUnreadCount()
   const [open, setOpen] = useState(false)
   const [list, setList] = useState({ status: 'idle', items: [] })
@@ -107,13 +108,13 @@ export default function NotificationBell() {
         aria-label={badge ? `Thông báo, ${count} chưa đọc` : 'Thông báo'}
         aria-expanded={open}
         aria-haspopup="true"
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/80 hover:text-white"
+        className={`relative flex h-9 w-9 items-center justify-center rounded-full ${tone === 'light' ? 'text-cocoa hover:text-brand' : 'text-white/80 hover:text-white'}`}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8Zm4.3 12a1.9 1.9 0 0 0 3.4 0" />
         </svg>
         {badge && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-gold px-1 text-center text-[10px] font-semibold leading-4 text-ink">
+          <span className={`absolute -right-0.5 -top-0.5 min-w-4 rounded-full px-1 text-center text-[10px] font-semibold leading-4 ${tone === 'light' ? 'bg-brand text-white' : 'bg-gold text-ink'}`}>
             {badge}
           </span>
         )}

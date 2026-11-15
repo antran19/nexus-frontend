@@ -1,15 +1,15 @@
 import { Outlet } from 'react-router-dom'
-import Footer from './landing/Footer'
+import StoreFooter from './StoreFooter'
 
 // Frame for every page except the landing page and the login/register screens:
-// cream background under the page, the landing footer at the bottom.
+// the warm page background under the page, the store footer at the bottom.
 export default function SiteLayout() {
   return (
     <>
-      <main className="min-h-[60vh] bg-cream/40">
+      <main className="min-h-[60vh] bg-peach">
         <Outlet />
       </main>
-      <Footer />
+      <StoreFooter />
     </>
   )
 }

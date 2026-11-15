@@ -6,6 +6,7 @@ import { isStaff } from '../utils/adminOrders'
 import { isAdmin } from '../utils/sellerRequests'
 import { scrollToTop } from './landing/useSmoothScroll'
 import NotificationBell from './NotificationBell'
+import StoreHeader from './StoreHeader'
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth()
@@ -13,8 +14,7 @@ export default function Header() {
   const { pathname } = useLocation()
 
   // On the landing page the header floats transparently over the hero video
-  // and turns solid once the user scrolls; every other page gets the same dark
-  // bar, pinned to the top, so the whole site reads as one.
+  // and turns solid once the user scrolls.
   const overHero = pathname === '/'
   const [scrolled, setScrolled] = useState(false)
 
@@ -43,12 +43,13 @@ export default function Header() {
     navigate('/')
   }
 
+  // Only the landing page keeps this floating dark bar; every other page uses the store header.
+  if (!overHero) return <StoreHeader />
+
   const floatingSkin = scrolled
     ? 'bg-ink/85 backdrop-blur-md border-white/10'
     : 'bg-gradient-to-b from-black/50 to-transparent border-transparent'
-  const barClass = overHero
-    ? `fixed inset-x-0 top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${floatingSkin}`
-    : 'sticky top-0 z-40 border-b border-white/10 bg-ink'
+  const barClass = `fixed inset-x-0 top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${floatingSkin}`
   const brandClass = 'text-white'
   const linkClass = 'text-sm text-white/80 hover:text-white'
   const buttonClass = 'text-sm px-3 py-1.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-soft'
