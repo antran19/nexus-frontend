@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getUsers } from '../api/users'
 import PageHero from '../components/PageHero'
+import UserReputationPanel from '../components/UserReputationPanel'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
-import { countByRole, filterUsers, newestFirst, ROLE_LABEL, ROLE_TABS } from '../utils/adminUsers'
+import { canAdjust, countByRole, filterUsers, newestFirst, ROLE_LABEL, ROLE_TABS } from '../utils/adminUsers'
 import { isStaff } from '../utils/adminOrders'
 
 const ROLE_BADGE = {
@@ -20,6 +21,7 @@ export default function AdminUsersPage() {
   const staff = isStaff(user)
   const [role, setRole] = useState('ALL')
   const [search, setSearch] = useState('')
+  const [openId, setOpenId] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', users: [], message: '' })
 
@@ -116,6 +118,15 @@ export default function AdminUsersPage() {
                   {ROLE_LABEL[account.roleCode] ?? account.roleCode}
                 </span>
               </div>
+              <button
+                type="button"
+                aria-expanded={openId === account.id}
+                onClick={() => setOpenId(openId === account.id ? '' : account.id)}
+                className="mt-3 text-sm text-gray-700 underline hover:text-gold"
+              >
+                {openId === account.id ? 'Ẩn uy tín' : 'Xem uy tín'}
+              </button>
+              {openId === account.id && <UserReputationPanel userId={account.id} seesAdjustments={canAdjust(user)} />}
             </li>
           ))}
         </ul>
