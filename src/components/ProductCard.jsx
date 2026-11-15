@@ -11,9 +11,9 @@ export default function ProductCard({ product }) {
   return (
     <Link
       to={`/products/${product.id}`}
-      className="group block rounded-xl border border-gray-200/80 bg-white overflow-hidden hover:border-gold hover:shadow-lg transition-[border-color,box-shadow] duration-300"
+      className="group block rounded-2xl border border-tray bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-brand/40 transition-[border-color,box-shadow] duration-300"
     >
-      <div className="relative aspect-square bg-gray-100 overflow-hidden">
+      <div className="relative aspect-[4/3] bg-tray overflow-hidden">
         <img
           src={imageUrl}
           alt={product.name || 'Sản phẩm'}
@@ -23,23 +23,24 @@ export default function ProductCard({ product }) {
           }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         />
-        <div className="absolute top-3 left-3">
-          <span className="text-[10px] font-semibold tracking-wider uppercase bg-ink/80 text-gold-soft px-2.5 py-1 rounded-full backdrop-blur-sm">
-            {product?.status === 'ACTIVE' ? 'Đang mở' : 'Đấu giá'}
-          </span>
-        </div>
+        <span className="absolute top-3 left-3 text-[11px] font-semibold bg-white/95 text-brand px-2.5 py-1 rounded-full">
+          {product?.status === 'ACTIVE' ? 'Đang mở' : 'Đấu giá'}
+        </span>
       </div>
 
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-ink truncate group-hover:text-gold transition-colors">
+        <h3 className="font-display text-base font-semibold text-cocoa truncate group-hover:text-brand transition-colors">
           {product.name}
         </h3>
-        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+        <p className="text-xs text-gray-600 mt-1 line-clamp-1">
           {product.description || 'Sản phẩm chính hãng'}
         </p>
-        <div className="mt-3 pt-3 border-t border-gray-100 flex items-baseline justify-between">
-          <span className="text-xs text-gray-400">Giá</span>
-          <span className="text-sm font-bold text-ink">{priceDisplay}</span>
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] text-gray-500">Giá</p>
+            <p className="font-display text-lg font-extrabold text-brand">{priceDisplay}</p>
+          </div>
+          <span className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white group-hover:bg-brand-dark transition-colors">Xem chi tiết</span>
         </div>
       </div>
     </Link>
