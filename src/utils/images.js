@@ -17,3 +17,11 @@ export function resolveProductImage(product) {
   }
   return SCENE_FALLBACKS[hash % SCENE_FALLBACKS.length]
 }
+
+// Every picture of a product for its gallery, empty entries dropped and a repeated address shown once. A product
+// without any picture gets the one stand-in the list uses, so the gallery is never empty.
+export function productImages(product) {
+  const urls = (product?.imageUrls ?? []).filter((url) => typeof url === 'string' && url.trim() !== '')
+  const unique = [...new Set(urls)]
+  return unique.length > 0 ? unique : [resolveProductImage(product)]
+}
