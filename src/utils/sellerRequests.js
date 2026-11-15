@@ -64,3 +64,11 @@ export function reviewErrorMessage(err) {
         : 'Không xử lý được yêu cầu. Vui lòng thử lại.'
   }
 }
+
+// Where a person stands on the way to selling, for the seller sign-up page: 1 make an account, 2 send the request,
+// 3 wait for an admin. `sent` is true once this person's request is known to be waiting. A seller or an admin is done.
+export function sellerStep(user, sent) {
+  if (!user) return { current: 1, done: false }
+  if (user.role === 'SELLER' || user.role === 'ADMIN') return { current: 3, done: true }
+  return { current: sent ? 3 : 2, done: false }
+}

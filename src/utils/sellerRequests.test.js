@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  canRequestSeller, displayName, isAdmin, removeRequest, requestSellerMessage, reviewErrorMessage,
+  canRequestSeller, displayName, isAdmin, removeRequest, requestSellerMessage, reviewErrorMessage, sellerStep,
 } from './sellerRequests.js'
 
 const fail = (code, status = 409) => ({ response: { status, data: { error: { code } } } })
@@ -40,4 +40,12 @@ test('reviewing: each answer has its own sentence', () => {
   assert.match(reviewErrorMessage(fail('USER_NOT_FOUND', 404)), /không còn tồn tại/)
   assert.match(reviewErrorMessage({ response: { status: 403, data: {} } }), /quản trị viên/)
   assert.match(reviewErrorMessage(undefined), /Không xử lý được/)
+})
+
+test('sellerStep follows the person from sign-up to the answer of an admin', () => {
+  assert.deepEqual(sellerStep(null, false), { current: 1, done: false })
+  assert.deepEqual(sellerStep({ role: 'BUYER' }, false), { current: 2, done: false })
+  assert.deepEqual(sellerStep({ role: 'BUYER' }, true), { current: 3, done: false })
+  assert.deepEqual(sellerStep({ role: 'SELLER' }, false), { current: 3, done: true })
+  assert.deepEqual(sellerStep({ role: 'ADMIN' }, false), { current: 3, done: true })
 })
