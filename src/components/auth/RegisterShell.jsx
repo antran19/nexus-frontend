@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom'
 // The frame of both sign-up pages (buyer and seller), after the Stitch design: a warm panel with the reasons to join
 // on the left, the form on a white card on the right. `points` is a list of { title, text }. On a phone the panel
 // goes above the form.
-export default function RegisterShell({ badge, title, intro, points, children }) {
+export default function RegisterShell({ badge, title, intro, points, footer, children }) {
   return (
-    <div className="bg-peach min-h-[calc(100vh-57px)]">
+    <div className="bg-peach min-h-[60vh]">
       <div className="max-w-6xl mx-auto px-6 py-10 md:py-14 grid lg:grid-cols-5 gap-8 lg:gap-12">
         <aside className="lg:col-span-2">
           <span className="inline-block text-xs font-semibold tracking-wide text-brand bg-white border border-brand/30 rounded-full px-3 py-1">{badge}</span>
-          <h1 className="mt-4 text-3xl md:text-4xl font-semibold leading-tight text-gray-900">{title}</h1>
+          <h1 className="mt-4 font-display text-3xl md:text-4xl font-bold leading-tight text-cocoa">{title}</h1>
           <p className="mt-3 text-gray-600">{intro}</p>
           <ul className="mt-8 space-y-4">
             {points.map((point) => (
@@ -23,8 +23,12 @@ export default function RegisterShell({ badge, title, intro, points, children })
             ))}
           </ul>
           <p className="mt-8 text-sm text-gray-600">
-            Đã có tài khoản?{' '}
-            <Link to="/login" className="font-medium text-brand underline">Đăng nhập</Link>
+            {footer ?? (
+              <>
+                Đã có tài khoản?{' '}
+                <Link to="/login" className="font-medium text-brand underline">Đăng nhập</Link>
+              </>
+            )}
           </p>
         </aside>
 

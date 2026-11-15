@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import AuthLayout from '../components/auth/AuthLayout'
-import FormField from '../components/auth/FormField'
-import { LockIcon, MailIcon } from '../components/auth/icons'
+import LabeledField from '../components/auth/LabeledField'
+import RegisterShell from '../components/auth/RegisterShell'
 import { useAuth } from '../context/AuthContext'
+
+const POINTS = [
+  { title: 'Theo dõi phiên đang tham gia', text: 'Xem giá hiện tại và thời gian còn lại của từng phiên.' },
+  { title: 'Đơn hàng và thanh toán', text: 'Phiên thắng thành đơn hàng, thanh toán trực tuyến ngay trên Nexus.' },
+  { title: 'Thông báo khi bị vượt giá', text: 'Biết ngay khi có người đặt giá cao hơn bạn.' },
+]
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -28,44 +33,33 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Chào mừng trở lại" subtitle="Đăng nhập để tiếp tục đấu giá trên Nexus.">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-8">Đăng nhập</h1>
+    <RegisterShell
+      badge="Chào mừng trở lại"
+      title="Đăng nhập vào Nexus"
+      intro="Đăng nhập để tiếp tục đấu giá và quản lý đơn hàng của bạn."
+      points={POINTS}
+      footer={
+        <>
+          Chưa có tài khoản?{' '}
+          <Link to="/register" className="font-medium text-brand underline">Đăng ký</Link>
+        </>
+      }
+    >
+      <h2 className="font-display text-xl font-bold text-cocoa">Thông tin đăng nhập</h2>
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+        <LabeledField label="Địa chỉ email" required type="email" autoComplete="email" placeholder="ban@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <LabeledField label="Mật khẩu" required type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <FormField
-          icon={MailIcon}
-          type="email"
-          placeholder="Địa chỉ email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
-        <FormField
-          icon={LockIcon}
-          type="password"
-          placeholder="Mật khẩu"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-        />
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 bg-ink text-white rounded-full py-2.5 font-medium disabled:opacity-50 hover:bg-gold hover:text-ink transition-colors"
+          className="w-full bg-brand text-white rounded-full py-3 font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
           {submitting ? 'Đang xử lý...' : 'Đăng nhập'}
         </button>
       </form>
-
-      <p className="text-sm text-gray-600 mt-6">
-        Chưa có tài khoản?{' '}
-        <Link to="/register" className="text-gray-900 font-medium underline">
-          Đăng ký
-        </Link>
-      </p>
-    </AuthLayout>
+    </RegisterShell>
   )
 }
