@@ -3,6 +3,7 @@ import Header from './components/Header'
 import PrivateRoute from './components/PrivateRoute'
 import SiteLayout from './components/SiteLayout'
 import { AuthProvider } from './context/AuthContext'
+import BuyerDashboardPage from './pages/BuyerDashboardPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import LandingPage from './pages/LandingPage'
@@ -40,6 +41,7 @@ export default function App() {
 
             <Route element={<PrivateRoute />}>
               <Route path="/me" element={<ProfilePage />} />
+              <Route path="/me/dashboard" element={<BuyerDashboardPage />} />
               <Route path="/me/bidding" element={<MyBiddingPage />} />
               <Route path="/me/orders" element={<MyOrdersPage />} />
               <Route path="/me/selling" element={<MySellingPage />} />
