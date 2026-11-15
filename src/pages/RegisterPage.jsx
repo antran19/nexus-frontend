@@ -1,178 +1,108 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
-import AuthLayout from '../components/auth/AuthLayout'
-import FormField from '../components/auth/FormField'
-import { LockIcon, MailIcon, UserIcon } from '../components/auth/icons'
+import LabeledField from '../components/auth/LabeledField'
+import RegisterShell from '../components/auth/RegisterShell'
+import { cleanPhone, EMPTY_REGISTRATION, registerErrorMessage, registerFieldErrors, validateRegistration } from '../utils/registerForm'
 
-// The server checks these rules again; this only saves a round trip for the obvious mistakes.
-function ageOn(isoDate) {
-  const born = new Date(isoDate)
-  const now = new Date()
-  let age = now.getFullYear() - born.getFullYear()
-  const hadBirthday = now.getMonth() > born.getMonth() || (now.getMonth() === born.getMonth() && now.getDate() >= born.getDate())
-  if (!hadBirthday) age -= 1
-  return age
+const POINTS = [
+  { title: 'Đấu giá theo thời gian thực', text: 'Giá mới và thời gian còn lại cập nhật ngay trên màn hình.' },
+  { title: 'Quy chế ký quỹ rõ ràng', text: 'Biết trước các điều kiện khi tham gia và khi thắng phiên.' },
+  { title: 'Thanh toán an toàn', text: 'Thắng phiên là có đơn hàng, thanh toán trực tuyến qua cổng Stripe.' },
+]
+
+function Consent({ checked, onChange, error, children }) {
+  return (
+    <div>
+      <label className="flex items-start gap-2 text-sm text-gray-700">
+        <input type="checkbox" className="mt-1 accent-brand" checked={checked} onChange={onChange} />
+        <span>{children}</span>
+      </label>
+      {error && <p role="alert" className="mt-1 ml-6 text-xs text-red-600">{error}</p>}
+    </div>
+  )
 }
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    birthDate: '',
-    termsAccepted: false,
-    escrowAcknowledged: false,
-  })
+  const [form, setForm] = useState(EMPTY_REGISTRATION)
+  const [errors, setErrors] = useState({})
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  function validate() {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      return 'Email không đúng định dạng'
-    }
-    if (form.password.length < 8 || form.password.length > 72) {
-      return 'Mật khẩu phải có từ 8 đến 72 ký tự'
-    }
-    if (form.password !== form.confirmPassword) {
-      return 'Mật khẩu xác nhận không khớp'
-    }
-    const phone = form.phone.replace(/[\s.-]/g, '')
-    if (phone && !/^(0\d{9}|\+84\d{9})$/.test(phone)) {
-      return 'Số điện thoại phải là số Việt Nam (0xxxxxxxxx hoặc +84xxxxxxxxx)'
-    }
-    if (form.birthDate && ageOn(form.birthDate) < 18) {
-      return 'Bạn cần đủ 18 tuổi để tham gia đấu giá'
-    }
-    if (!form.termsAccepted) {
-      return 'Bạn cần đồng ý Điều khoản Dịch vụ'
-    }
-    if (!form.escrowAcknowledged) {
-      return 'Bạn cần xác nhận đã hiểu quy chế ký quỹ'
-    }
-    return ''
-  }
+  const set = (field) => (e) => setForm({ ...form, [field]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
 
   async function handleSubmit(e) {
     e.preventDefault()
-    const validationError = validate()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+    const found = validateRegistration(form)
+    setErrors(found)
+    setError('')
+    if (Object.keys(found).length > 0) return
 
     setSubmitting(true)
-    setError('')
     try {
-      await register({ ...form, phone: form.phone.replace(/[\s.-]/g, '') })
+      await register({ ...form, fullName: form.fullName.trim(), phone: cleanPhone(form.phone) })
       navigate('/login')
     } catch (err) {
-      // A 400 carries the rule that failed per field; show it instead of the generic message.
-      const apiError = err.response?.data?.error
-      const message = apiError?.fieldErrors?.[0]?.message || apiError?.message
-      setError(
-        err.response?.status === 409
-          ? 'Email đã được sử dụng'
-          : message || 'Đăng ký thất bại, vui lòng thử lại',
-      )
+      // A 400 names the field that failed; show it under that field, and the sentence as well when no field matches.
+      const fields = registerFieldErrors(err)
+      setErrors(fields)
+      if (Object.keys(fields).length === 0) setError(registerErrorMessage(err))
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <AuthLayout title="Bắt đầu nào" subtitle="Tạo tài khoản để theo dõi và đặt giá trên Nexus.">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-8">Đăng ký</h1>
+    <RegisterShell
+      badge="Dành cho người mua"
+      title="Tạo tài khoản người mua Nexus"
+      intro="Đăng ký để theo dõi sản phẩm, đặt giá và mua những món đồ bạn thích."
+      points={POINTS}
+    >
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
+        <section aria-labelledby="reg-account" className="flex flex-col gap-4">
+          <h2 id="reg-account" className="text-base font-semibold text-gray-900">1. Thông tin tài khoản</h2>
+          <LabeledField label="Họ và tên" required placeholder="Nguyễn Văn An" autoComplete="name" value={form.fullName} onChange={set('fullName')} error={errors.fullName} />
+          <LabeledField label="Địa chỉ email" required type="email" placeholder="ban@example.com" autoComplete="email" value={form.email} onChange={set('email')} error={errors.email} />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <LabeledField label="Số điện thoại" type="tel" placeholder="0912 345 678" autoComplete="tel" hint="Không bắt buộc" value={form.phone} onChange={set('phone')} error={errors.phone} />
+            <LabeledField label="Ngày sinh" type="date" hint="Không bắt buộc, cần đủ 18 tuổi" value={form.birthDate} onChange={set('birthDate')} error={errors.birthDate} />
+          </div>
+        </section>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <FormField
-          icon={UserIcon}
-          type="text"
-          placeholder="Họ và tên"
-          value={form.fullName}
-          onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-          required
-        />
-        <FormField
-          icon={MailIcon}
-          type="email"
-          placeholder="Địa chỉ email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
-        <FormField
-          icon={LockIcon}
-          type="password"
-          placeholder="Mật khẩu"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-        />
-        <FormField
-          icon={LockIcon}
-          type="password"
-          placeholder="Nhập lại mật khẩu"
-          value={form.confirmPassword}
-          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-          required
-        />
-        <FormField
-          icon={UserIcon}
-          type="tel"
-          placeholder="Số điện thoại (không bắt buộc)"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
-        <label className="flex flex-col gap-1 text-xs text-gray-500">
-          Ngày sinh (không bắt buộc, cần đủ 18 tuổi)
-          <FormField
-            icon={UserIcon}
-            type="date"
-            aria-label="Ngày sinh"
-            value={form.birthDate}
-            onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-          />
-        </label>
-        <label className="flex items-start gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={form.termsAccepted}
-            onChange={(e) => setForm({ ...form, termsAccepted: e.target.checked })}
-          />
-          Tôi đồng ý với Điều khoản Dịch vụ của Nexus
-        </label>
-        <label className="flex items-start gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={form.escrowAcknowledged}
-            onChange={(e) => setForm({ ...form, escrowAcknowledged: e.target.checked })}
-          />
-          Tôi đã hiểu quy chế ký quỹ khi tham gia đấu giá
-        </label>
+        <section aria-labelledby="reg-security" className="flex flex-col gap-4">
+          <h2 id="reg-security" className="text-base font-semibold text-gray-900">2. Bảo mật</h2>
+          <LabeledField label="Mật khẩu" required type="password" autoComplete="new-password" hint="Từ 8 đến 72 ký tự" value={form.password} onChange={set('password')} error={errors.password} />
+          <LabeledField label="Nhập lại mật khẩu" required type="password" autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} />
+        </section>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <section aria-labelledby="reg-consent" className="flex flex-col gap-3">
+          <h2 id="reg-consent" className="text-base font-semibold text-gray-900">3. Xác nhận</h2>
+          <Consent checked={form.termsAccepted} onChange={set('termsAccepted')} error={errors.termsAccepted}>
+            Tôi đồng ý với Điều khoản Dịch vụ của Nexus
+          </Consent>
+          <Consent checked={form.escrowAcknowledged} onChange={set('escrowAcknowledged')} error={errors.escrowAcknowledged}>
+            Tôi đã hiểu quy chế ký quỹ khi tham gia đấu giá
+          </Consent>
+        </section>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 bg-ink text-white rounded-full py-2.5 font-medium disabled:opacity-50 hover:bg-gold hover:text-ink transition-colors"
-        >
-          {submitting ? 'Đang xử lý...' : 'Đăng ký'}
-        </button>
+        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+
+        <div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-brand text-white rounded-full py-3 font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
+          >
+            {submitting ? 'Đang xử lý...' : 'Hoàn tất đăng ký'}
+          </button>
+          <p className="mt-4 text-sm text-gray-600 text-center">
+            Muốn bán hàng?{' '}
+            <Link to="/register/seller" className="font-medium text-brand underline">Đăng ký người bán</Link>
+          </p>
+        </div>
       </form>
-
-      <p className="text-sm text-gray-600 mt-6">
-        Đã có tài khoản?{' '}
-        <Link to="/login" className="text-gray-900 font-medium underline">
-          Đăng nhập
-        </Link>
-      </p>
-    </AuthLayout>
+    </RegisterShell>
   )
 }
