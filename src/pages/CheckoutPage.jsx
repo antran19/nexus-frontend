@@ -8,7 +8,7 @@ import { cartErrorMessage, errorMessage } from '../utils/apiError'
 const EMPTY_ADDRESS = { recipientName: '', phone: '', addressLine: '', city: '' }
 
 const inputClass =
-  'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors'
+  'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
         <p className="text-base text-gray-600 mb-6">Giỏ hàng trống, chưa có gì để thanh toán.</p>
         <Link
           to="/products"
-          className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
+          className="inline-block px-6 py-2.5 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
         >
           Khám phá sản phẩm
         </Link>
@@ -125,7 +125,7 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         <form onSubmit={handleSubmit} className="lg:col-span-2 flex flex-col gap-5">
-          <h2 className="text-lg font-bold text-ink">Địa chỉ giao hàng</h2>
+          <h2 className="text-lg font-bold text-cocoa">Địa chỉ giao hàng</h2>
 
           <label className="flex flex-col gap-1.5 text-sm text-gray-700">
             Người nhận
@@ -173,7 +173,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+            className="mt-2 w-full py-3 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
             {submitting ? 'Đang chuyển tới Stripe...' : 'Thanh toán với Stripe'}
           </button>
@@ -183,20 +183,20 @@ export default function CheckoutPage() {
         </form>
 
         <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-          <h2 className="text-lg font-bold text-ink mb-4">Đơn hàng</h2>
+          <h2 className="text-lg font-bold text-cocoa mb-4">Đơn hàng</h2>
           <ul className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
             {items.map((item) => (
               <li key={item.productId} className="flex justify-between gap-4">
                 <span className="truncate">
                   {item.productName} × {item.quantity}
                 </span>
-                <span className="font-medium text-ink shrink-0">
+                <span className="font-medium text-cocoa shrink-0">
                   {Number(item.subtotal).toLocaleString('vi-VN')} đ
                 </span>
               </li>
             ))}
           </ul>
-          <div className="flex justify-between text-base font-bold text-ink">
+          <div className="flex justify-between text-base font-bold text-cocoa">
             <span>Tổng</span>
             <span>{Number(cart?.totalAmount ?? 0).toLocaleString('vi-VN')} đ</span>
           </div>

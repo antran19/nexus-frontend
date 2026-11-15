@@ -106,7 +106,7 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
             ))}
           </div>
           <div className="mt-4 flex gap-2">
-            <button type="submit" className="bg-ink text-white rounded px-4 py-2 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50">
+            <button type="submit" className="bg-brand text-white rounded px-4 py-2 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
               {busy ? 'Đang xử lý...' : 'Lưu địa chỉ và thanh toán'}
             </button>
             <button type="button" onClick={() => setMode('idle')} className="text-sm text-gray-600 px-3">Quay lại</button>
@@ -141,7 +141,7 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
         <button
           type="button"
           onClick={() => { onNotice(null); setMode('address') }}
-          className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors"
+          className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors"
         >
           Nhập địa chỉ và thanh toán
         </button>
@@ -150,7 +150,7 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
           type="button"
           disabled={busy}
           onClick={pay}
-          className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+          className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
           {busy ? 'Đang mở thanh toán...' : 'Thanh toán'}
         </button>

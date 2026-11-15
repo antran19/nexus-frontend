@@ -55,7 +55,7 @@ export default function MyOrdersPage() {
               role="tab"
               aria-selected={filter === entry.value}
               onClick={() => setFilter(entry.value)}
-              className={`text-sm rounded-full border px-4 py-1.5 ${filter === entry.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+              className={`text-sm rounded-full border px-4 py-1.5 ${filter === entry.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
             >
               {entry.label}
             </button>

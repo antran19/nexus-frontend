@@ -43,7 +43,7 @@ export default function PaymentCancelPage() {
 
   return (
     <div className="max-w-xl mx-auto px-6 py-24 text-center">
-      <h1 className="text-2xl font-bold text-ink">Bạn chưa hoàn tất thanh toán</h1>
+      <h1 className="text-2xl font-bold text-cocoa">Bạn chưa hoàn tất thanh toán</h1>
       <p className="mt-3 text-sm text-gray-600">
         Đơn hàng vẫn được giữ trong 30 phút. Bạn có thể thanh toán lại hoặc hủy đơn.
       </p>
@@ -56,7 +56,7 @@ export default function PaymentCancelPage() {
             type="button"
             disabled={busy}
             onClick={handleRetry}
-            className="px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
             Thanh toán lại
           </button>
@@ -70,7 +70,7 @@ export default function PaymentCancelPage() {
           </button>
         </div>
       ) : (
-        <Link to="/cart" className="mt-8 inline-block text-sm underline text-ink">
+        <Link to="/cart" className="mt-8 inline-block text-sm underline text-cocoa">
           Về giỏ hàng
         </Link>
       )}

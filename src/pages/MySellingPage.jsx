@@ -83,7 +83,7 @@ export default function MySellingPage() {
               aria-selected={status === tab.value}
               onClick={() => setStatus(tab.value)}
               className={`text-sm rounded-full px-4 py-1.5 border transition-colors ${
-                status === tab.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'
+                status === tab.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'
               }`}
             >
               {tab.label}
@@ -107,7 +107,7 @@ export default function MySellingPage() {
               <li key={item.auctionId}>
                 <Link
                   to={`/products/${item.productId}`}
-                  className="block border border-gray-200 bg-white rounded-xl p-4 hover:border-gold hover:shadow-md transition-[border-color,box-shadow]"
+                  className="block border border-gray-200 bg-white rounded-xl p-4 hover:border-brand hover:shadow-md transition-[border-color,box-shadow]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium text-gray-900">{nameOf(item)}</span>
@@ -143,7 +143,7 @@ export default function MySellingPage() {
           <button
             type="button"
             onClick={() => load(page + 1, status)}
-            className="mt-6 border border-ink text-ink rounded px-5 py-2 text-sm hover:bg-ink hover:text-white transition-colors"
+            className="mt-6 border border-brand text-brand rounded px-5 py-2 text-sm hover:bg-brand hover:text-white transition-colors"
           >
             Xem thêm
           </button>

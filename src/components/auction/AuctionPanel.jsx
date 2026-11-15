@@ -154,7 +154,7 @@ export default function AuctionPanel({ initial }) {
             <button
               type="submit"
               disabled={bidding}
-              className="bg-ink text-white rounded px-4 py-2 hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+              className="bg-brand text-white rounded px-4 py-2 hover:bg-brand-dark transition-colors disabled:opacity-50"
             >
               {bidding ? 'Đang gửi...' : 'Đặt giá'}
             </button>
@@ -187,7 +187,7 @@ export default function AuctionPanel({ initial }) {
               <button
                 type="submit"
                 disabled={savingMax}
-                className="border border-ink text-ink rounded px-4 py-2 hover:bg-ink hover:text-white transition-colors disabled:opacity-50"
+                className="border border-brand text-brand rounded px-4 py-2 hover:bg-brand hover:text-white transition-colors disabled:opacity-50"
               >
                 {savingMax ? 'Đang lưu...' : myMax != null ? 'Nâng mức' : 'Đặt mức'}
               </button>
@@ -206,7 +206,7 @@ export default function AuctionPanel({ initial }) {
               <li key={bid.id} className="flex justify-between">
                 <span>
                   {money(bid.amount)}
-                  {bid.bidderId === userId && <span className="ml-2 text-xs text-gold">bạn</span>}
+                  {bid.bidderId === userId && <span className="ml-2 text-xs text-brand">bạn</span>}
                 </span>
                 <span className="text-gray-400">{new Date(bid.placedAt).toLocaleTimeString('vi-VN')}</span>
               </li>

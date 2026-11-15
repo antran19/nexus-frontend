@@ -34,7 +34,7 @@ export default function BecomeSeller() {
 
   return (
     <section className="mt-12 border-t border-gray-200 pt-8" aria-labelledby="become-seller-title">
-      <h2 id="become-seller-title" className="text-sm font-semibold tracking-[0.2em] uppercase text-gold">Trở thành người bán</h2>
+      <h2 id="become-seller-title" className="text-sm font-semibold tracking-[0.2em] uppercase text-brand">Trở thành người bán</h2>
       <p className="mt-3 text-sm text-gray-600 max-w-xl">
         Muốn đăng sản phẩm và mở phiên đấu giá? Gửi yêu cầu để quản trị viên duyệt. Tài khoản của bạn vẫn là người mua cho đến khi được duyệt.
       </p>
@@ -43,7 +43,7 @@ export default function BecomeSeller() {
           type="button"
           onClick={send}
           disabled={sending}
-          className="mt-4 bg-ink text-white rounded px-5 py-2 text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+          className="mt-4 bg-brand text-white rounded px-5 py-2 text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
           {sending ? 'Đang gửi...' : 'Gửi yêu cầu làm người bán'}
         </button>

@@ -85,7 +85,7 @@ export default function ProductDetailPage() {
 
         {product.price != null && (
           <div className="mt-6 border-t border-b border-gray-200 py-4">
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Mua trực tiếp</p>
+            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-brand">Mua trực tiếp</p>
             <p className="text-3xl font-semibold text-gray-900 mt-1">
               {Number(product.price).toLocaleString('vi-VN')} đ
             </p>
@@ -111,7 +111,7 @@ export default function ProductDetailPage() {
                   type="button"
                   disabled={addingToCart}
                   onClick={handleAddToCart}
-                  className="bg-ink text-white text-sm font-medium rounded px-5 py-2 hover:bg-gold hover:text-ink disabled:opacity-50 transition-colors"
+                  className="bg-brand text-white text-sm font-medium rounded px-5 py-2 hover:bg-brand-dark disabled:opacity-50 transition-colors"
                 >
                   {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
                 </button>

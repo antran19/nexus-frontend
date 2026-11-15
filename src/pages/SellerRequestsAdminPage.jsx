@@ -88,7 +88,7 @@ export default function SellerRequestsAdminPage() {
               role="tab"
               aria-selected={status === tab.value}
               onClick={() => { setStatus(tab.value); setNotice(null) }}
-              className={`text-sm rounded-full border px-4 py-1.5 ${status === tab.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+              className={`text-sm rounded-full border px-4 py-1.5 ${status === tab.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
             >
               {tab.label}
             </button>
@@ -127,7 +127,7 @@ export default function SellerRequestsAdminPage() {
                       type="button"
                       disabled={busyId === item.id}
                       onClick={() => review(item, true)}
-                      className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+                      className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                     >
                       Duyệt
                     </button>

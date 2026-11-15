@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
                 role="tab"
                 aria-selected={role === tab.value}
                 onClick={() => setRole(tab.value)}
-                className={`text-sm rounded-full border px-4 py-1.5 ${role === tab.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+                className={`text-sm rounded-full border px-4 py-1.5 ${role === tab.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
               >
                 {tab.label}
                 {state.status === 'ready' && <span className="ml-1.5 opacity-70">{counts[tab.value]}</span>}
@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
                 type="button"
                 aria-expanded={openId === account.id}
                 onClick={() => setOpenId(openId === account.id ? '' : account.id)}
-                className="mt-3 text-sm text-gray-700 underline hover:text-gold"
+                className="mt-3 text-sm text-gray-700 underline hover:text-brand"
               >
                 {openId === account.id ? 'Ẩn uy tín' : 'Xem uy tín'}
               </button>

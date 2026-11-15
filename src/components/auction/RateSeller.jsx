@@ -68,7 +68,7 @@ export default function RateSeller({ auctionId }) {
               aria-checked={score === value}
               aria-label={`${value} sao`}
               onClick={() => setScore(value)}
-              className={`text-2xl leading-none ${value <= score ? 'text-gold' : 'text-gray-300'}`}
+              className={`text-2xl leading-none ${value <= score ? 'text-brand' : 'text-gray-300'}`}
             >
               ★
             </button>
@@ -87,7 +87,7 @@ export default function RateSeller({ auctionId }) {
         />
         {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
         <div className="mt-3 flex gap-2">
-          <button type="submit" className="bg-ink text-white rounded px-4 py-2 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50">
+          <button type="submit" className="bg-brand text-white rounded px-4 py-2 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
             {sending ? 'Đang gửi...' : 'Gửi đánh giá'}
           </button>
           <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-600 px-3">

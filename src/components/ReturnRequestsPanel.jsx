@@ -71,7 +71,7 @@ export default function ReturnRequestsPanel({ reloadKey }) {
             role="tab"
             aria-selected={status === tab.value}
             onClick={() => { setStatus(tab.value); setNotice(null); setConfirming(null) }}
-            className={`text-sm rounded-full border px-4 py-1.5 ${status === tab.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+            className={`text-sm rounded-full border px-4 py-1.5 ${status === tab.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
           >
             {tab.label}
           </button>
@@ -119,7 +119,7 @@ export default function ReturnRequestsPanel({ reloadKey }) {
                       type="button"
                       disabled={busyId === item.id}
                       onClick={() => answer(item, confirming.action)}
-                      className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+                      className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                     >
                       {busyId === item.id ? 'Đang xử lý...' : 'Xác nhận'}
                     </button>
@@ -130,7 +130,7 @@ export default function ReturnRequestsPanel({ reloadKey }) {
                     <button
                       type="button"
                       onClick={() => { setNotice(null); setConfirming({ id: item.id, action: 'receive' }) }}
-                      className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors"
+                      className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors"
                     >
                       Đã nhận hàng trả về
                     </button>

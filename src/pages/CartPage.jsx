@@ -96,7 +96,7 @@ export default function CartPage() {
           <p className="text-base text-gray-600 mb-6">Giỏ hàng của bạn đang trống.</p>
           <Link
             to="/products"
-            className="inline-block px-6 py-2.5 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
+            className="inline-block px-6 py-2.5 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             Khám phá sản phẩm
           </Link>
@@ -123,7 +123,7 @@ export default function CartPage() {
                     <div>
                       <Link
                         to={`/products/${item.productId}`}
-                        className="text-base font-semibold text-ink hover:text-gold transition-colors block"
+                        className="text-base font-semibold text-cocoa hover:text-brand transition-colors block"
                       >
                         {item.productName || 'Sản phẩm'}
                       </Link>
@@ -143,7 +143,7 @@ export default function CartPage() {
                       >
                         -
                       </button>
-                      <span className="px-3 py-1 text-sm font-medium min-w-8 text-center text-ink">
+                      <span className="px-3 py-1 text-sm font-medium min-w-8 text-center text-cocoa">
                         {item.quantity}
                       </span>
                       <button
@@ -156,7 +156,7 @@ export default function CartPage() {
                       </button>
                     </div>
 
-                    <p className="text-sm font-semibold text-ink min-w-28 text-right">
+                    <p className="text-sm font-semibold text-cocoa min-w-28 text-right">
                       {Number(item.subtotal).toLocaleString('vi-VN')} đ
                     </p>
 
@@ -175,20 +175,20 @@ export default function CartPage() {
           </div>
 
           <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-            <h2 className="text-lg font-bold text-ink mb-4">Tóm tắt đơn hàng</h2>
+            <h2 className="text-lg font-bold text-cocoa mb-4">Tóm tắt đơn hàng</h2>
 
             <div className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
               <div className="flex justify-between">
                 <span>Số lượng món</span>
-                <span className="font-medium text-ink">{items.reduce((acc, i) => acc + i.quantity, 0)}</span>
+                <span className="font-medium text-cocoa">{items.reduce((acc, i) => acc + i.quantity, 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tạm tính</span>
-                <span className="font-medium text-ink">{Number(totalAmount).toLocaleString('vi-VN')} đ</span>
+                <span className="font-medium text-cocoa">{Number(totalAmount).toLocaleString('vi-VN')} đ</span>
               </div>
             </div>
 
-            <div className="flex justify-between text-base font-bold text-ink mb-6">
+            <div className="flex justify-between text-base font-bold text-cocoa mb-6">
               <span>Tổng thanh toán</span>
               <span>{Number(totalAmount).toLocaleString('vi-VN')} đ</span>
             </div>
@@ -196,14 +196,14 @@ export default function CartPage() {
             <button
               type="button"
               onClick={() => navigate('/checkout')}
-              className="w-full py-3 rounded bg-ink text-white text-sm font-medium hover:bg-gold hover:text-ink transition-colors"
+              className="w-full py-3 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
             >
               Tiến hành đặt hàng
             </button>
 
             <Link
               to="/products"
-              className="block mt-4 text-center text-xs uppercase tracking-wider text-gray-500 hover:text-gold transition-colors"
+              className="block mt-4 text-center text-xs uppercase tracking-wider text-gray-500 hover:text-brand transition-colors"
             >
               Tiếp tục mua sắm
             </Link>

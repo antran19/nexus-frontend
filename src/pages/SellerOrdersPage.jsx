@@ -94,7 +94,7 @@ export default function SellerOrdersPage() {
               role="tab"
               aria-selected={tab === entry.value}
               onClick={() => setTab(entry.value)}
-              className={`text-sm rounded-full border px-4 py-1.5 ${tab === entry.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+              className={`text-sm rounded-full border px-4 py-1.5 ${tab === entry.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
             >
               {entry.label}
               {state.status === 'ready' && <span className="ml-1.5 opacity-70">{counts[entry.value]}</span>}
@@ -161,7 +161,7 @@ export default function SellerOrdersPage() {
                         type="button"
                         disabled={busyId === order.id}
                         onClick={() => ship(order)}
-                        className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+                        className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                       >
                         {busyId === order.id ? 'Đang gửi...' : 'Xác nhận đã giao'}
                       </button>

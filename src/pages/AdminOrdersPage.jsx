@@ -120,7 +120,7 @@ export default function AdminOrdersPage() {
               role="tab"
               aria-selected={section === value}
               onClick={() => { setSection(value); setNotice(null) }}
-              className={`pb-2 text-sm font-medium border-b-2 -mb-px ${section === value ? 'border-gold text-ink' : 'border-transparent text-gray-500 hover:text-ink'}`}
+              className={`pb-2 text-sm font-medium border-b-2 -mb-px ${section === value ? 'border-brand text-cocoa' : 'border-transparent text-gray-500 hover:text-cocoa'}`}
             >
               {label}
             </button>
@@ -137,7 +137,7 @@ export default function AdminOrdersPage() {
                 role="tab"
                 aria-selected={tab === entry.value}
                 onClick={() => setTab(entry.value)}
-                className={`text-sm rounded-full border px-4 py-1.5 ${tab === entry.value ? 'bg-ink text-white border-ink' : 'border-gray-300 text-gray-700 hover:border-gold'}`}
+                className={`text-sm rounded-full border px-4 py-1.5 ${tab === entry.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
               >
                 {entry.label}
                 {state.status === 'ready' && <span className="ml-1.5 opacity-70">{counts[entry.value]}</span>}
@@ -215,7 +215,7 @@ export default function AdminOrdersPage() {
                   <button
                     type="button"
                     onClick={() => { setNotice(null); setReturning({ id: order.id, reason: '', error: '' }) }}
-                    className="mt-4 border border-gray-300 text-gray-700 rounded px-4 py-1.5 text-sm hover:border-gold"
+                    className="mt-4 border border-gray-300 text-gray-700 rounded px-4 py-1.5 text-sm hover:border-brand"
                   >
                     Mở yêu cầu trả hàng
                   </button>
@@ -240,7 +240,7 @@ export default function AdminOrdersPage() {
                         {returning.error && <span role="alert" className="text-xs text-red-600">{returning.error}</span>}
                       </label>
                       <div className="mt-3 flex gap-2">
-                        <button type="submit" className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50">
+                        <button type="submit" className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
                           {busyId === order.id ? 'Đang gửi...' : 'Mở yêu cầu'}
                         </button>
                         <button type="button" onClick={() => setReturning(null)} className="text-sm text-gray-600 px-3">Hủy</button>
@@ -269,7 +269,7 @@ export default function AdminOrdersPage() {
                         {refunding.error && <span role="alert" className="text-xs text-red-600">{refunding.error}</span>}
                       </label>
                       <div className="mt-3 flex gap-2">
-                        <button type="submit" className="bg-ink text-white rounded px-4 py-1.5 text-sm hover:bg-gold hover:text-ink transition-colors disabled:opacity-50">
+                        <button type="submit" className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
                           {busyId === order.id ? 'Đang hoàn tiền...' : 'Xác nhận hoàn tiền'}
                         </button>
                         <button type="button" onClick={() => setRefunding(null)} className="text-sm text-gray-600 px-3">Hủy</button>

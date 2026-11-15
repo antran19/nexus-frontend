@@ -89,7 +89,7 @@ export default function ProfilePage() {
     body = (
       <div className="grid md:grid-cols-2 gap-10">
         <section>
-          <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-gold">Thông tin tài khoản</h2>
+          <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-brand">Thông tin tài khoản</h2>
           <dl className="mt-3">
             <ReadOnlyRow label="Email" value={profile.email} />
             <ReadOnlyRow label="Vai trò" value={ROLE_LABEL[profile.roleCode] ?? profile.roleCode} />
@@ -102,7 +102,7 @@ export default function ProfilePage() {
         </section>
 
         <section>
-          <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-gold">Chỉnh sửa</h2>
+          <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-brand">Chỉnh sửa</h2>
           <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-4" noValidate>
             <label className="flex flex-col gap-1 text-sm text-gray-700">
               Họ và tên
@@ -134,7 +134,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving || !isChanged(profile, form)}
-              className="self-start bg-ink text-white rounded px-5 py-2 text-sm font-medium hover:bg-gold hover:text-ink transition-colors disabled:opacity-50"
+              className="self-start bg-brand text-white rounded px-5 py-2 text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
             >
               {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
