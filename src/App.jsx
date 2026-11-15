@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import MyBiddingPage from './pages/MyBiddingPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
+import AdminUsersPage from './pages/AdminUsersPage'
 import MyOrdersPage from './pages/MyOrdersPage'
 import MySellingPage from './pages/MySellingPage'
 import SellerOrdersPage from './pages/SellerOrdersPage'
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/me/selling/orders" element={<SellerOrdersPage />} />
               <Route path="/admin/seller-requests" element={<SellerRequestsAdminPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />

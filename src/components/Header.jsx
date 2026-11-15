@@ -91,9 +91,14 @@ export default function Header() {
               </Link>
             )}
             {isStaff(user) && (
-              <Link to="/admin/orders" className={linkClass}>
-                Quản lý đơn
-              </Link>
+              <>
+                <Link to="/admin/orders" className={linkClass}>
+                  Quản lý đơn
+                </Link>
+                <Link to="/admin/users" className={linkClass}>
+                  Người dùng
+                </Link>
+              </>
             )}
             <Link to="/me" className={linkClass}>
               Hồ sơ
