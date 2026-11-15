@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { getAuction, getBidHistory, getMyAutoBid, placeBid, setAutoBid } from '../../api/auctions'
 import { useAuth } from '../../context/AuthContext'
-import { applyBid, mergeBid, myStanding, nextMinBid } from '../../utils/auctionLive'
+import { applyBid, bidLadder, mergeBid, myStanding, nextMinBid } from '../../utils/auctionLive'
 import { bidErrorMessage } from '../../utils/apiError'
 import { STANDING } from '../../utils/standing'
 import SellerReputation from './SellerReputation'
@@ -140,7 +140,24 @@ export default function AuctionPanel({ initial }) {
         </Link>
       ) : (
         <>
-          <form onSubmit={handleBid} className="flex items-center gap-2 mt-4">
+          <div role="group" aria-label="Chọn nhanh mức giá" className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {bidLadder(auction).map((step) => (
+              <button
+                key={step.amount}
+                type="button"
+                onClick={() => setTypedBid(String(step.amount))}
+                aria-pressed={bidAmount === String(step.amount)}
+                aria-label={`Chọn mức ${money(step.amount)}`}
+                className={`rounded-lg border px-2 py-2 text-center transition-colors ${
+                  bidAmount === String(step.amount) ? 'border-brand bg-brand text-white' : 'border-tray bg-peach text-cocoa hover:border-brand'
+                }`}
+              >
+                <span className="block text-sm font-semibold">{step.delta > 0 ? `+${money(step.delta)}` : 'Tối thiểu'}</span>
+                <span className="block text-[11px] opacity-80">{money(step.amount)}</span>
+              </button>
+            ))}
+          </div>
+          <form onSubmit={handleBid} className="flex items-center gap-2 mt-3">
             <input
               type="number"
               step="0.01"
