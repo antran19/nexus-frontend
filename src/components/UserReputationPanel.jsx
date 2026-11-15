@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAdjustments, getPenalties } from '../api/users'
 import { getReputation } from '../api/ratings'
+import AdjustReputationForm from './AdjustReputationForm'
 import { formatDelta, MAX_SCORE, NORMAL_FROM, totalPenaltyPoints, TRUSTED_FROM, TRUST_NOTE } from '../utils/adminUsers'
 import { reputationSummary, TRUST_LABEL } from '../utils/ratings'
 
@@ -9,11 +10,13 @@ const when = (value) => new Date(value).toLocaleString('vi-VN')
 const LEVEL_COLOR = { LOW: 'bg-red-500', NORMAL: 'bg-amber-500', TRUSTED: 'bg-green-600' }
 
 // The reputation of one person: the score with its level, what the ratings say, the automatic penalties and, for an
-// admin, the manual changes. The score is read from the server each time the panel opens (and when reloadKey
-// changes after an adjustment). A part the person looking may not see is left out, not shown as an error.
-export default function UserReputationPanel({ userId, seesAdjustments, reloadKey = 0 }) {
+// admin, the manual changes and the form to make one. The score is read from the server each time the panel opens
+// and again after an adjustment (the old numbers stay on screen until the new ones arrive). A part the person
+// looking may not see is left out, not shown as an error.
+export default function UserReputationPanel({ userId, seesAdjustments }) {
+  const [reloads, setReloads] = useState(0)
   const [state, setState] = useState({ forKey: null, status: 'loading', reputation: null, penalties: null, adjustments: null })
-  const key = `${userId}:${reloadKey}`
+  const key = `${userId}:${reloads}`
 
   useEffect(() => {
     let cancelled = false
@@ -40,7 +43,7 @@ export default function UserReputationPanel({ userId, seesAdjustments, reloadKey
     }
   }, [userId, seesAdjustments, key])
 
-  if (state.forKey !== key) return <p role="status" className="text-sm text-gray-500">Đang tải uy tín...</p>
+  if (state.forKey === null) return <p role="status" className="text-sm text-gray-500">Đang tải uy tín...</p>
   if (state.status === 'error') return <p role="alert" className="text-sm text-red-600">Không tải được điểm uy tín của người này.</p>
 
   const { reputation, penalties, adjustments } = state
@@ -65,6 +68,10 @@ export default function UserReputationPanel({ userId, seesAdjustments, reloadKey
       <p className="mt-1 text-xs text-gray-500">
         Mức uy tín được ghi vào mã đăng nhập, nên điểm mới chỉ có tác dụng khi người này đăng nhập lại.
       </p>
+
+      {seesAdjustments && (
+        <AdjustReputationForm userId={userId} currentScore={reputation.score} onApplied={() => setReloads((n) => n + 1)} />
+      )}
 
       <h3 className="mt-5 text-sm font-medium text-gray-900">Hình phạt tự động</h3>
       {penalties === null && <p className="mt-1 text-xs text-gray-500">Bạn không có quyền xem hình phạt.</p>}
