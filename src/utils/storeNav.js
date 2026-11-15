@@ -5,7 +5,11 @@ import { ROLE_LABEL } from './adminUsers.js'
 export function navLinks(user) {
   const links = [{ to: '/products', label: 'Sản phẩm' }]
   if (!user) return links
-  links.push({ to: '/me/bidding', label: 'Phiên của tôi' }, { to: '/me/orders', label: 'Đơn của tôi' })
+  links.push(
+    { to: '/me/dashboard', label: 'Tổng quan' },
+    { to: '/me/bidding', label: 'Phiên của tôi' },
+    { to: '/me/orders', label: 'Đơn của tôi' },
+  )
   if (user.role === 'SELLER' || user.role === 'ADMIN') {
     links.push({ to: '/me/selling', label: 'Phiên đang bán' }, { to: '/me/selling/orders', label: 'Đơn cần giao' })
   }

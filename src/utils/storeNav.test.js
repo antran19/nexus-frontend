@@ -9,11 +9,11 @@ test('a visitor sees only the product list', () => {
 })
 
 test('a buyer sees their auctions and orders but nothing for selling or admin', () => {
-  assert.deepEqual(paths({ role: 'BUYER' }), ['/products', '/me/bidding', '/me/orders', '/me'])
+  assert.deepEqual(paths({ role: 'BUYER' }), ['/products', '/me/dashboard', '/me/bidding', '/me/orders', '/me'])
 })
 
 test('a seller also sees the auctions they run and the orders to ship', () => {
-  assert.deepEqual(paths({ role: 'SELLER' }), ['/products', '/me/bidding', '/me/orders', '/me/selling', '/me/selling/orders', '/me'])
+  assert.deepEqual(paths({ role: 'SELLER' }), ['/products', '/me/dashboard', '/me/bidding', '/me/orders', '/me/selling', '/me/selling/orders', '/me'])
 })
 
 test('an admin sees every page, support staff only the order and user pages', () => {
