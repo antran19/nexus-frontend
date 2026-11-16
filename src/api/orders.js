@@ -1,11 +1,18 @@
+import { CART_CHANGED } from '../utils/cartSummary'
 import { apiClient } from './client'
 
 // idempotencyKey: one UUID per "open the checkout page"; sending the same value again returns the
 // order created the first time instead of a second one (API.md 6.4).
+// The server empties the cart when it makes the order, so the header badge is told the cart changed.
 export function startCheckout(idempotencyKey) {
-  return apiClient.post('/api/v1/checkout', null, {
-    headers: { 'Idempotency-Key': idempotencyKey },
-  })
+  return apiClient
+    .post('/api/v1/checkout', null, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    })
+    .then((response) => {
+      window.dispatchEvent(new Event(CART_CHANGED))
+      return response
+    })
 }
 
 export function setShippingAddress(orderId, address) {
