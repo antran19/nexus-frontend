@@ -8,7 +8,7 @@ import { cartErrorMessage, errorMessage } from '../utils/apiError'
 const EMPTY_ADDRESS = { recipientName: '', phone: '', addressLine: '', city: '' }
 
 const inputClass =
-  'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-colors'
+  'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-colors'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
         <p className="text-base text-gray-600 mb-6">Giỏ hàng trống, chưa có gì để thanh toán.</p>
         <Link
           to="/products"
-          className="inline-block px-6 py-2.5 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
+          className="inline-block px-6 py-2.5 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors"
         >
           Khám phá sản phẩm
         </Link>
@@ -111,9 +111,9 @@ export default function CheckoutPage() {
     <>
       <PageHero eyebrow="Bước cuối" title="Thanh toán" />
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-10">
       {errorText && (
-        <div className="mb-6 p-4 rounded border border-red-200 bg-red-50 text-sm text-red-700">
+        <div role="alert" className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700">
           {errorText}{' '}
           {cartProblem && (
             <Link to="/cart" className="underline font-semibold">
@@ -123,9 +123,9 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-        <form onSubmit={handleSubmit} className="lg:col-span-2 flex flex-col gap-5">
-          <h2 className="text-lg font-bold text-cocoa">Địa chỉ giao hàng</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <form onSubmit={handleSubmit} className="lg:col-span-2 flex flex-col gap-5 rounded-2xl border border-tray bg-white p-6 shadow-sm">
+          <h2 className="font-display text-lg font-bold text-cocoa">Địa chỉ giao hàng</h2>
 
           <label className="flex flex-col gap-1.5 text-sm text-gray-700">
             Người nhận
@@ -173,7 +173,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 w-full py-3 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
+            className="mt-2 w-full py-3 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
             {submitting ? 'Đang chuyển tới Stripe...' : 'Thanh toán với Stripe'}
           </button>
@@ -182,9 +182,9 @@ export default function CheckoutPage() {
           </p>
         </form>
 
-        <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-          <h2 className="text-lg font-bold text-cocoa mb-4">Đơn hàng</h2>
-          <ul className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
+        <div className="border border-tray rounded-2xl p-6 bg-white shadow-sm lg:sticky lg:top-32">
+          <h2 className="font-display text-lg font-bold text-cocoa mb-4">Đơn hàng</h2>
+          <ul className="space-y-3 text-sm text-gray-600 border-b border-tray pb-4 mb-4">
             {items.map((item) => (
               <li key={item.productId} className="flex justify-between gap-4">
                 <span className="truncate">
@@ -196,9 +196,9 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
-          <div className="flex justify-between text-base font-bold text-cocoa">
+          <div className="flex justify-between items-baseline text-base font-bold text-cocoa">
             <span>Tổng</span>
-            <span>{Number(cart?.totalAmount ?? 0).toLocaleString('vi-VN')} đ</span>
+            <span className="font-display text-xl font-extrabold text-brand">{Number(cart?.totalAmount ?? 0).toLocaleString('vi-VN')} đ</span>
           </div>
         </div>
       </div>
