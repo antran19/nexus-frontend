@@ -12,6 +12,16 @@ export function setShippingAddress(orderId, address) {
   return apiClient.put(`/api/v1/orders/${orderId}/shipping-address`, address)
 }
 
+// Buyer: how this order is paid, 'STRIPE_CARD' or 'CASH'. Cash is for a direct order of one seller that has an address.
+export function setPaymentMethod(orderId, paymentMethod) {
+  return apiClient.put(`/api/v1/orders/${orderId}/payment-method`, { paymentMethod })
+}
+
+// Seller: "I received the cash" for a CASH order; the order becomes PAID like after a card payment.
+export function confirmCashPayment(orderId) {
+  return apiClient.post(`/api/v1/orders/${orderId}/confirm-cash`)
+}
+
 export function createCheckoutSession(orderId, successUrl, cancelUrl) {
   return apiClient.post(`/api/v1/orders/${orderId}/checkout-session`, { successUrl, cancelUrl })
 }
