@@ -40,12 +40,12 @@ export default function StoreHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-tray bg-white">
-      <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Link to="/" onClick={() => window.scrollTo({ top: 0 })} className="font-display text-2xl font-extrabold tracking-tight text-brand">
           NEXUS
         </Link>
 
-        <form onSubmit={search} role="search" className="order-last md:order-none w-full md:w-auto md:flex-1 md:max-w-xl flex items-stretch rounded-xl border border-tray bg-peach">
+        <form onSubmit={search} role="search" className="order-last md:order-none w-full md:w-auto md:flex-1 md:max-w-md flex items-stretch rounded-xl border border-tray bg-peach">
           <select
             aria-label="Danh mục"
             value={categoryId}
@@ -70,7 +70,7 @@ export default function StoreHeader() {
           </button>
         </form>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           <Link to={sell.to} className="hidden sm:inline-block rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-cocoa hover:brightness-95 transition">
             {sell.label}
           </Link>
@@ -87,10 +87,10 @@ export default function StoreHeader() {
                     <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] font-semibold leading-4 text-white">{cartBadge}</span>
                   )}
                 </span>
-                {cart.count > 0 && <span className="hidden xl:block text-sm font-semibold tabular-nums">{formatMoney(cart.total)}</span>}
+                {cart.count > 0 && <span className="hidden lg:block text-sm font-semibold tabular-nums">{formatMoney(cart.total)}</span>}
               </Link>
               <NotificationBell tone="light" />
-              <div className="hidden lg:block text-right leading-tight">
+              <div className="hidden 2xl:block text-right leading-tight">
                 <p className="text-sm font-semibold text-cocoa">{displayUserName(user)}</p>
                 <p className="text-[11px] text-gray-500">{roleLabel(user)}</p>
               </div>
