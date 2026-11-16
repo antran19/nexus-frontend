@@ -13,6 +13,7 @@ import AdminOrdersPage from './pages/AdminOrdersPage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import MyOrdersPage from './pages/MyOrdersPage'
 import MySellingPage from './pages/MySellingPage'
+import SellerDashboardPage from './pages/SellerDashboardPage'
 import SellerOrdersPage from './pages/SellerOrdersPage'
 import SellerRequestsAdminPage from './pages/SellerRequestsAdminPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/me/bidding" element={<MyBiddingPage />} />
               <Route path="/me/orders" element={<MyOrdersPage />} />
               <Route path="/me/selling" element={<MySellingPage />} />
+              <Route path="/me/selling/dashboard" element={<SellerDashboardPage />} />
               <Route path="/me/selling/orders" element={<SellerOrdersPage />} />
               <Route path="/admin/seller-requests" element={<SellerRequestsAdminPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
