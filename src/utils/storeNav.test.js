@@ -13,12 +13,13 @@ test('a buyer sees their auctions and orders but nothing for selling or admin', 
 })
 
 test('a seller also sees the auctions they run and the orders to ship', () => {
-  assert.deepEqual(paths({ role: 'SELLER' }), ['/products', '/me/dashboard', '/me/bidding', '/me/orders', '/me/selling', '/me/selling/orders', '/me'])
+  assert.deepEqual(paths({ role: 'SELLER' }), ['/products', '/me/dashboard', '/me/bidding', '/me/orders', '/me/selling/dashboard', '/me/selling', '/me/selling/orders', '/me'])
 })
 
 test('an admin sees every page, support staff only the order and user pages', () => {
   assert.ok(paths({ role: 'ADMIN' }).includes('/admin/seller-requests'))
   assert.ok(paths({ role: 'ADMIN' }).includes('/me/selling'))
+  assert.ok(!paths({ role: 'ADMIN' }).includes('/me/selling/dashboard'))
   const support = paths({ role: 'SUPPORT_STAFF' })
   assert.ok(support.includes('/admin/orders') && support.includes('/admin/users'))
   assert.ok(!support.includes('/admin/seller-requests') && !support.includes('/me/selling'))

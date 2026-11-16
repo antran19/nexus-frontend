@@ -10,6 +10,8 @@ export function navLinks(user) {
     { to: '/me/bidding', label: 'Phiên của tôi' },
     { to: '/me/orders', label: 'Đơn của tôi' },
   )
+  // The seller's overview page is for sellers only; an admin does not sell, so it would only refuse them.
+  if (user.role === 'SELLER') links.push({ to: '/me/selling/dashboard', label: 'Tổng quan bán' })
   if (user.role === 'SELLER' || user.role === 'ADMIN') {
     links.push({ to: '/me/selling', label: 'Phiên đang bán' }, { to: '/me/selling/orders', label: 'Đơn cần giao' })
   }
