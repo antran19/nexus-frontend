@@ -7,13 +7,13 @@ import CategoryMarquee from '../components/landing/CategoryMarquee'
 import CtaBand from '../components/landing/CtaBand'
 import FeatureCards from '../components/landing/FeatureCards'
 import FeaturedAuctions from '../components/landing/FeaturedAuctions'
-import Footer from '../components/landing/Footer'
 import Hero from '../components/landing/Hero'
 import HowItWorks from '../components/landing/HowItWorks'
 import ScrollStory from '../components/landing/ScrollStory'
 import Testimonials from '../components/landing/Testimonials'
 import useSmoothScroll from '../components/landing/useSmoothScroll'
 import { useCategories, useDiscoverProducts } from '../components/landing/useLandingData'
+import StoreFooter from '../components/StoreFooter'
 import VideoStrip from '../components/landing/VideoStrip'
 import WhyNexus from '../components/landing/WhyNexus'
 
@@ -64,7 +64,7 @@ export default function LandingPage() {
       <FeaturedAuctions />
       <Testimonials />
       <CtaBand />
-      <Footer />
+      <StoreFooter />
       <BackToTop />
     </div>
   )
