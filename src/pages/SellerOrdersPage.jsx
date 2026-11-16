@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSellingOrders, markOrderShipped } from '../api/orders'
+import { confirmCashPayment, getSellingOrders, markOrderShipped } from '../api/orders'
 import PageHero from '../components/PageHero'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import { isSeller } from '../utils/mySelling'
+import { needsCashConfirmation, PAYMENT_LABEL, paymentChoiceError, paymentMethodOf } from '../utils/paymentMethod'
 import {
   addressLine, countByTab, filterOrders, myItems, myTotal, ORDER_TABS, replaceOrder, shipErrorMessage, STATUS_LABEL,
 } from '../utils/sellerOrders'
@@ -29,6 +30,7 @@ export default function SellerOrdersPage() {
   const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
   // Shipping is a one-way step, so it asks once more: confirmingId is the order whose button was pressed.
   const [confirmingId, setConfirmingId] = useState('')
+  const [cashConfirmingId, setCashConfirmingId] = useState('')
   const [busyId, setBusyId] = useState('')
   const [notice, setNotice] = useState(null)
 
@@ -65,6 +67,23 @@ export default function SellerOrdersPage() {
     } finally {
       setBusyId('')
       setConfirmingId('')
+    }
+  }
+
+  // "I received the cash": the order becomes PAID, and from then on it is shipped like any other paid order.
+  async function confirmCash(order) {
+    setBusyId(order.id)
+    setNotice(null)
+    try {
+      const { data } = await confirmCashPayment(order.id)
+      setState((current) => ({ ...current, orders: replaceOrder(current.orders, data) }))
+      setNotice({ kind: 'success', text: `Đã xác nhận nhận tiền mặt của đơn #${order.id.slice(0, 8)}. Bạn có thể giao hàng.` })
+    } catch (err) {
+      setNotice({ kind: 'error', text: paymentChoiceError(err, 'Không xác nhận được tiền mặt. Vui lòng thử lại.') })
+      reload()
+    } finally {
+      setBusyId('')
+      setCashConfirmingId('')
     }
   }
 
@@ -150,7 +169,38 @@ export default function SellerOrdersPage() {
               <p className="mt-3 text-sm text-gray-600">
                 <span className="text-gray-500">Giao tới: </span>{addressLine(order.shippingAddress)}
               </p>
+              <p className="mt-1 text-xs text-gray-500">Thanh toán: {PAYMENT_LABEL[paymentMethodOf(order)]}</p>
               {order.shippedAt && <p className="mt-1 text-sm text-green-700">Đã giao lúc {when(order.shippedAt)}</p>}
+
+              {needsCashConfirmation(order) && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <p className="basis-full text-sm text-gray-700">Người mua trả tiền mặt khi nhận hàng. Xác nhận khi bạn đã nhận đủ tiền.</p>
+                  {cashConfirmingId === order.id ? (
+                    <>
+                      <span className="text-sm text-gray-700">Bạn đã nhận {money(myTotal(order, sellerId))} tiền mặt?</span>
+                      <button
+                        type="button"
+                        disabled={busyId === order.id}
+                        onClick={() => confirmCash(order)}
+                        className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
+                      >
+                        {busyId === order.id ? 'Đang xác nhận...' : 'Xác nhận đã nhận tiền'}
+                      </button>
+                      <button type="button" disabled={busyId === order.id} onClick={() => setCashConfirmingId('')} className="text-sm text-gray-600 px-2">
+                        Hủy
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setCashConfirmingId(order.id); setNotice(null) }}
+                      className="border border-brand text-brand rounded px-4 py-1.5 text-sm hover:bg-brand hover:text-white transition-colors"
+                    >
+                      Đã nhận tiền mặt
+                    </button>
+                  )}
+                </div>
+              )}
 
               {order.status === 'PAID' && !order.shippedAt && (
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -173,7 +223,7 @@ export default function SellerOrdersPage() {
                     <button
                       type="button"
                       onClick={() => { setConfirmingId(order.id); setNotice(null) }}
-                      className="border border-ink text-ink rounded px-4 py-1.5 text-sm hover:bg-ink hover:text-white transition-colors"
+                      className="border border-brand text-brand rounded px-4 py-1.5 text-sm hover:bg-brand hover:text-white transition-colors"
                     >
                       Đánh dấu đã giao
                     </button>
