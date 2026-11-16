@@ -10,16 +10,16 @@ export default function FeaturedAuctions() {
   if (products.length === 0) return null
 
   return (
-    <section className="bg-gray-50/70 py-20 border-t border-b border-gray-200/60">
+    <section className="bg-white py-20 border-t border-b border-tray">
       <div className="max-w-6xl mx-auto px-6">
         <Reveal as="div" className="flex items-end justify-between mb-10">
           <div>
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Tiêu điểm</p>
-            <h2 className="mt-2 text-3xl font-bold text-ink">Phiên đấu giá nổi bật</h2>
+            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-brand">Tiêu điểm</p>
+            <h2 className="mt-2 font-display text-3xl font-bold text-cocoa">Phiên đấu giá nổi bật</h2>
           </div>
           <Link
             to="/products"
-            className="text-xs font-semibold uppercase tracking-wider text-ink underline underline-offset-4 hover:text-gold transition-colors"
+            className="text-xs font-semibold uppercase tracking-wider text-brand underline underline-offset-4 hover:text-brand-dark transition-colors"
           >
             Xem tất cả phiên
           </Link>

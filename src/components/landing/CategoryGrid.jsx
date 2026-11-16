@@ -41,42 +41,44 @@ export default function CategoryGrid() {
       : DEFAULT_CATEGORY_CARDS
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-20">
-      <Reveal as="div" className="mb-10">
-        <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Bộ sưu tập</p>
-        <h2 className="mt-2 text-3xl font-bold text-ink">Tìm theo danh mục</h2>
-        <p className="mt-2 text-gray-600">Tuyển tập những món đồ giá trị được bảo chứng bởi Nexus.</p>
-      </Reveal>
+    <section className="bg-peach">
+      <div className="max-w-6xl mx-auto px-6 py-20">
+        <Reveal as="div" className="mb-10">
+          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-brand">Bộ sưu tập</p>
+          <h2 className="mt-2 font-display text-3xl font-bold text-cocoa">Tìm theo danh mục</h2>
+          <p className="mt-2 text-gray-600">Tuyển tập những món đồ giá trị được bảo chứng bởi Nexus.</p>
+        </Reveal>
 
-      <Reveal
-        as="div"
-        stagger={0.08}
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
-      >
-        {displayCategories.map((category) => (
-          <Link
-            key={category.id}
-            to={`/products?categoryId=${category.id}`}
-            className="group relative aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200/80 shadow-sm hover:border-gold hover:shadow-xl transition-[border-color,box-shadow] duration-500"
-          >
-            <img
-              src={category.image}
-              alt={category.name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent group-hover:via-ink/40 transition-colors" />
+        <Reveal
+          as="div"
+          stagger={0.08}
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+        >
+          {displayCategories.map((category) => (
+            <Link
+              key={category.id}
+              to={`/products?categoryId=${category.id}`}
+              className="group relative aspect-[3/4] rounded-2xl overflow-hidden border border-tray shadow-sm hover:border-brand hover:shadow-xl transition-[border-color,box-shadow] duration-500"
+            >
+              <img
+                src={category.image}
+                alt={category.name}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent group-hover:via-ink/40 transition-colors" />
 
-            <div className="absolute inset-x-0 bottom-0 p-5">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-gold-soft block mb-1">
-                {category.count}
-              </span>
-              <h3 className="text-base font-bold text-white group-hover:text-gold transition-colors leading-snug">
-                {category.name}
-              </h3>
-            </div>
-          </Link>
-        ))}
-      </Reveal>
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-gold-soft block mb-1">
+                  {category.count}
+                </span>
+                <h3 className="text-base font-bold text-white group-hover:text-gold transition-colors leading-snug">
+                  {category.name}
+                </h3>
+              </div>
+            </Link>
+          ))}
+        </Reveal>
+      </div>
     </section>
   )
 }
