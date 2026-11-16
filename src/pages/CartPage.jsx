@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getCart, removeCartItem, updateCartItem } from '../api/cart'
 import PageHero from '../components/PageHero'
 import { cartErrorMessage } from '../utils/apiError'
+import { cartSummary } from '../utils/cartSummary'
 import { resolveProductImage } from '../utils/images'
 
 export default function CartPage() {
@@ -78,38 +79,38 @@ export default function CartPage() {
   }
 
   const items = cart?.items || []
-  const totalAmount = cart?.totalAmount ?? 0
+  const { count, total: totalAmount } = cartSummary(cart)
 
   return (
     <>
       <PageHero eyebrow="Túi đồ của bạn" title="Giỏ hàng" />
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-10">
       {errorMessage && (
-        <div className="mb-6 p-4 rounded border border-red-200 bg-red-50 text-sm text-red-700">
+        <div role="alert" className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700">
           {errorMessage}
         </div>
       )}
 
       {items.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-gray-200 rounded-lg">
+        <div className="py-16 text-center border border-dashed border-tray rounded-2xl bg-white">
           <p className="text-base text-gray-600 mb-6">Giỏ hàng của bạn đang trống.</p>
           <Link
             to="/products"
-            className="inline-block px-6 py-2.5 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
+            className="inline-block px-6 py-2.5 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors"
           >
             Khám phá sản phẩm
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          <div className="lg:col-span-2 divide-y divide-gray-200 border-t border-b border-gray-200">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
               const isUpdating = updatingId === item.productId
               return (
-                <div key={item.productId} className="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div key={item.productId} className="rounded-2xl border border-tray bg-white p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-200/80 shrink-0">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-tray border border-tray shrink-0">
                       <img
                         src={resolveProductImage({ id: item.productId })}
                         alt={item.productName || 'Sản phẩm'}
@@ -123,7 +124,7 @@ export default function CartPage() {
                     <div>
                       <Link
                         to={`/products/${item.productId}`}
-                        className="text-base font-semibold text-cocoa hover:text-brand transition-colors block"
+                        className="font-display text-base font-semibold text-cocoa hover:text-brand transition-colors block"
                       >
                         {item.productName || 'Sản phẩm'}
                       </Link>
@@ -134,7 +135,7 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex items-center gap-6">
-                    <div className="flex items-center border border-gray-300 rounded">
+                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                       <button
                         type="button"
                         disabled={isUpdating}
@@ -174,13 +175,13 @@ export default function CartPage() {
             })}
           </div>
 
-          <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-            <h2 className="text-lg font-bold text-cocoa mb-4">Tóm tắt đơn hàng</h2>
+          <div className="border border-tray rounded-2xl p-6 bg-white shadow-sm lg:sticky lg:top-32">
+            <h2 className="font-display text-lg font-bold text-cocoa mb-4">Tóm tắt đơn hàng</h2>
 
-            <div className="space-y-3 text-sm text-gray-600 border-b border-gray-200 pb-4 mb-4">
+            <div className="space-y-3 text-sm text-gray-600 border-b border-tray pb-4 mb-4">
               <div className="flex justify-between">
                 <span>Số lượng món</span>
-                <span className="font-medium text-cocoa">{items.reduce((acc, i) => acc + i.quantity, 0)}</span>
+                <span className="font-medium text-cocoa">{count}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tạm tính</span>
@@ -188,15 +189,15 @@ export default function CartPage() {
               </div>
             </div>
 
-            <div className="flex justify-between text-base font-bold text-cocoa mb-6">
+            <div className="flex justify-between items-baseline text-base font-bold text-cocoa mb-6">
               <span>Tổng thanh toán</span>
-              <span>{Number(totalAmount).toLocaleString('vi-VN')} đ</span>
+              <span className="font-display text-xl font-extrabold text-brand">{Number(totalAmount).toLocaleString('vi-VN')} đ</span>
             </div>
 
             <button
               type="button"
               onClick={() => navigate('/checkout')}
-              className="w-full py-3 rounded bg-brand text-white text-sm font-medium hover:bg-brand-dark transition-colors"
+              className="w-full py-3 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors"
             >
               Tiến hành đặt hàng
             </button>
