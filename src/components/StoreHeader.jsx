@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { displayUserName, navLinks, roleLabel, searchPath, sellEntry } from '../utils/storeNav'
+import { badgeLabel } from '../utils/notifications'
+import { formatMoney } from '../utils/dashboard'
 import { useCategories } from './landing/useLandingData'
 import NotificationBell from './NotificationBell'
+import useCartSummary from './useCartSummary'
 
 function CartIcon() {
   return (
@@ -22,6 +25,8 @@ export default function StoreHeader() {
   const [q, setQ] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const sell = sellEntry(user)
+  const cart = useCartSummary(isAuthenticated)
+  const cartBadge = badgeLabel(cart.count)
 
   function search(event) {
     event.preventDefault()
@@ -71,8 +76,18 @@ export default function StoreHeader() {
           </Link>
           {isAuthenticated ? (
             <>
-              <Link to="/cart" aria-label="Giỏ hàng" className="flex h-9 w-9 items-center justify-center rounded-full text-cocoa hover:text-brand">
-                <CartIcon />
+              <Link
+                to="/cart"
+                aria-label={cart.count > 0 ? `Giỏ hàng, ${cart.count} món, ${formatMoney(cart.total)}` : 'Giỏ hàng'}
+                className="flex items-center gap-2 rounded-full px-2 py-1 text-cocoa hover:text-brand"
+              >
+                <span className="relative flex h-9 w-9 items-center justify-center">
+                  <CartIcon />
+                  {cartBadge && (
+                    <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] font-semibold leading-4 text-white">{cartBadge}</span>
+                  )}
+                </span>
+                {cart.count > 0 && <span className="hidden xl:block text-sm font-semibold tabular-nums">{formatMoney(cart.total)}</span>}
               </Link>
               <NotificationBell tone="light" />
               <div className="hidden lg:block text-right leading-tight">
