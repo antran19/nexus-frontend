@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getCart } from '../api/cart'
-import { createCheckoutSession, setShippingAddress, startCheckout } from '../api/orders'
+import { createCheckoutSession, setPaymentMethod, setShippingAddress, startCheckout } from '../api/orders'
 import PageHero from '../components/PageHero'
 import { cartErrorMessage, errorMessage } from '../utils/apiError'
+import { CARD, CASH, paymentChoiceError } from '../utils/paymentMethod'
 
 const EMPTY_ADDRESS = { recipientName: '', phone: '', addressLine: '', city: '' }
 
@@ -18,12 +19,15 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [errorText, setErrorText] = useState('')
   const [cartProblem, setCartProblem] = useState(false)
+  const [method, setMethod] = useState(CARD)
 
   // One key for this visit to the page: a retry after a network error reuses it, so the server
   // hands back the same order instead of creating a second one.
   const idempotencyKey = useRef(crypto.randomUUID())
   // The order already created by an earlier attempt (the cart is empty after checkout).
   const orderId = useRef(null)
+  // The method last saved on that order, so a buyer who first tried cash and then picks card gets it switched back.
+  const savedMethod = useRef(CARD)
 
   useEffect(() => {
     let cancelled = false
@@ -58,6 +62,20 @@ export default function CheckoutPage() {
       }
       await setShippingAddress(orderId.current, address)
 
+      if (method === CASH) {
+        await setPaymentMethod(orderId.current, CASH)
+        savedMethod.current = CASH
+        // No Stripe page: the order waits for the seller to confirm the cash they receive on delivery.
+        navigate('/me/orders', {
+          state: { notice: { kind: 'success', text: 'Đã đặt hàng. Bạn trả tiền mặt khi nhận hàng, người bán sẽ xác nhận khi đã nhận tiền.' } },
+        })
+        return
+      }
+      if (savedMethod.current === CASH) {
+        await setPaymentMethod(orderId.current, CARD)
+        savedMethod.current = CARD
+      }
+
       const origin = window.location.origin
       const { data: session } = await createCheckoutSession(
         orderId.current,
@@ -76,6 +94,9 @@ export default function CheckoutPage() {
         // The cart is kept as is: the buyer fixes it in the cart page, then comes back.
         setCartProblem(true)
         setErrorText(errorMessage(err, 'Giỏ hàng có sản phẩm không mua được.'))
+      } else if (code?.startsWith('CASH_') || code === 'PAYMENT_METHOD_NOT_STRIPE') {
+        // The order exists and keeps its address: the buyer can pick card instead and try again.
+        setErrorText(paymentChoiceError(err, 'Không chọn được phương thức thanh toán.'))
       } else {
         setErrorText(cartErrorMessage(err, 'Không thể tạo đơn hàng. Vui lòng thử lại.'))
       }
@@ -170,16 +191,29 @@ export default function CheckoutPage() {
             />
           </label>
 
+          <fieldset className="mt-2 flex flex-col gap-2">
+            <legend className="text-sm font-medium text-cocoa">Phương thức thanh toán</legend>
+            {[
+              [CARD, 'Thẻ (Stripe)', 'Chuyển sang trang thanh toán của Stripe để nhập thẻ. Nexus không lưu thông tin thẻ.'],
+              [CASH, 'Tiền mặt khi nhận hàng', 'Bạn trả tiền khi nhận hàng, người bán xác nhận đã nhận tiền. Chỉ dùng được khi cả đơn thuộc một người bán.'],
+            ].map(([value, label, hint]) => (
+              <label key={value} className={`flex gap-3 rounded-xl border p-3 text-sm cursor-pointer ${method === value ? 'border-brand bg-peach' : 'border-gray-300 hover:border-brand'}`}>
+                <input type="radio" name="paymentMethod" value={value} checked={method === value} onChange={() => setMethod(value)} className="mt-1 accent-brand" />
+                <span>
+                  <span className="block font-medium text-cocoa">{label}</span>
+                  <span className="block text-xs text-gray-600 mt-0.5">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+
           <button
             type="submit"
             disabled={submitting}
             className="mt-2 w-full py-3 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {submitting ? 'Đang chuyển tới Stripe...' : 'Thanh toán với Stripe'}
+            {submitting ? 'Đang xử lý...' : method === CASH ? 'Đặt hàng, trả tiền mặt khi nhận' : 'Thanh toán với Stripe'}
           </button>
-          <p className="text-xs text-gray-500">
-            Bạn sẽ được chuyển sang trang thanh toán của Stripe để nhập thẻ. Nexus không lưu thông tin thẻ.
-          </p>
         </form>
 
         <div className="border border-tray rounded-2xl p-6 bg-white shadow-sm lg:sticky lg:top-32">

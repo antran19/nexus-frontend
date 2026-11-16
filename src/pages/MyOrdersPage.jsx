@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { getMyOrders } from '../api/orders'
 import OrderActions from '../components/OrderActions'
 import PageHero from '../components/PageHero'
 import { errorMessage } from '../utils/apiError'
 import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState } from '../utils/myOrders'
+import { PAYMENT_LABEL, paymentMethodOf } from '../utils/paymentMethod'
 import { addressLine, replaceOrder } from '../utils/sellerOrders'
 
 const money = (value) => `${Number(value).toLocaleString('vi-VN')} đ`
@@ -12,10 +13,12 @@ const when = (value) => new Date(value).toLocaleString('vi-VN')
 
 // Everything the signed-in person bought: direct purchases and the auctions they won, newest first.
 export default function MyOrdersPage() {
+  const location = useLocation()
   const [filter, setFilter] = useState('ALL')
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
-  const [notice, setNotice] = useState(null)
+  // The checkout page can hand over a first line to show (an order placed to be paid in cash).
+  const [notice, setNotice] = useState(() => location.state?.notice ?? null)
 
   useEffect(() => {
     let cancelled = false
@@ -118,6 +121,7 @@ export default function MyOrdersPage() {
                 <p className="mt-3 text-sm text-gray-600">
                   <span className="text-gray-500">Giao tới: </span>{addressLine(order.shippingAddress)}
                 </p>
+                <p className="mt-1 text-xs text-gray-500">Thanh toán: {PAYMENT_LABEL[paymentMethodOf(order)]}</p>
                 {order.paidAt && <p className="mt-1 text-xs text-gray-500">Đã thanh toán lúc {when(order.paidAt)}</p>}
                 {order.shippedAt && <p className="mt-1 text-sm text-green-700">Người bán đã giao lúc {when(order.shippedAt)}</p>}
 
