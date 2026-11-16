@@ -3,8 +3,9 @@
 @theme {
   --color-ink: #17171a;
   --color-ink-soft: #232328;
-  --color-gold: #c9a24a;
-  --color-gold-soft: #e3c47d;
+  /* Accents on the dark sections of the landing page: the amber of the Stitch palette. */
+  --color-gold: #f5a623;
+  --color-gold-soft: #ffc765;
   --color-cream: #f1ede6;
   /* Marketplace look from the Stitch design system: warm white page, brown-orange actions, amber highlights. */
   --color-brand: #9d4300;
