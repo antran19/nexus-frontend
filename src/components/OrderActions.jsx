@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { cancelOrder, createCheckoutSession, setShippingAddress } from '../api/orders'
+import { cancelOrder, createCheckoutSession, setPaymentMethod, setShippingAddress } from '../api/orders'
 import {
   addressBody, addressFieldErrors, canCancel, canPay, EMPTY_ADDRESS, needsAddress, orderActionError, paymentUrls,
   validateAddress,
 } from '../utils/myOrders'
+import { canChooseCash, CARD, CASH, isCash, paymentChoiceError } from '../utils/paymentMethod'
 
 const FIELDS = [
   ['recipientName', 'Người nhận', 'text'],
@@ -65,6 +66,26 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
       const byField = addressFieldErrors(err)
       if (Object.keys(byField).length > 0) setErrors(byField)
       else fail(err, 'Không lưu được địa chỉ hoặc mở trang thanh toán. Vui lòng thử lại.')
+      setBusy(false)
+    }
+  }
+
+  // Switches between card and cash. The server decides whether cash is allowed (one seller, an address) and says why not.
+  async function chooseMethod(method) {
+    setBusy(true)
+    onNotice(null)
+    try {
+      const { data: updated } = await setPaymentMethod(order.id, method)
+      onChanged(updated)
+      onNotice({
+        kind: 'success',
+        text: method === CASH ? 'Đã chọn thanh toán tiền mặt khi nhận hàng.' : 'Đã chuyển sang thanh toán thẻ.',
+      })
+    } catch (err) {
+      const code = err?.response?.data?.error?.code
+      onNotice({ kind: 'error', text: paymentChoiceError(err, 'Không đổi được phương thức thanh toán. Vui lòng thử lại.') })
+      if (code === 'ORDER_NOT_AWAITING_PAYMENT' || code === 'ORDER_NOT_FOUND') onStale()
+    } finally {
       setBusy(false)
     }
   }
@@ -135,9 +156,25 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
     )
   }
 
+  const cash = isCash(order)
+
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2">
-      {needsAddress(order) ? (
+      {cash && (
+        <p role="status" className="basis-full text-sm text-gray-700">
+          Bạn trả tiền mặt khi nhận hàng. Đơn chuyển sang đã thanh toán khi người bán xác nhận đã nhận tiền.
+        </p>
+      )}
+      {cash ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => chooseMethod(CARD)}
+          className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
+        >
+          Chuyển sang thanh toán thẻ
+        </button>
+      ) : needsAddress(order) ? (
         <button
           type="button"
           onClick={() => { onNotice(null); setMode('address') }}
@@ -153,6 +190,16 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
           className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
           {busy ? 'Đang mở thanh toán...' : 'Thanh toán'}
+        </button>
+      )}
+      {!cash && canChooseCash(order) && !needsAddress(order) && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => chooseMethod(CASH)}
+          className="border border-gray-300 text-gray-700 rounded px-4 py-1.5 text-sm hover:border-brand hover:text-brand disabled:opacity-50"
+        >
+          Trả tiền mặt khi nhận hàng
         </button>
       )}
       {canCancel(order) && (
