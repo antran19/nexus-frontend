@@ -46,6 +46,11 @@ export default function LoginPage() {
       }
     >
       <h2 className="font-display text-xl font-bold text-cocoa">Thông tin đăng nhập</h2>
+      {location.state?.passwordReset && (
+        <p role="status" className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+          Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.
+        </p>
+      )}
       {(location.state?.expired || sessionExpired) && (
         <p role="status" className="mt-4 rounded-lg border border-amber/60 bg-amber/10 px-3 py-2 text-sm text-cocoa">
           Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục.
@@ -54,6 +59,8 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
         <LabeledField label="Địa chỉ email" required type="email" autoComplete="email" placeholder="ban@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <LabeledField label="Mật khẩu" required type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+
+        <Link to="/forgot-password" className="-mt-2 self-end text-sm text-brand underline">Quên mật khẩu?</Link>
 
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
