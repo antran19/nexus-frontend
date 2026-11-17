@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { getAuction, getBidHistory, getMyAutoBid, placeBid, setAutoBid } from '../../api/auctions'
 import { useAuth } from '../../context/AuthContext'
+import { reserveNote } from '../../utils/auctionForm'
 import { applyBid, bidLadder, endingSoon, mergeBid, myStanding, nextMinBid, timeLeft } from '../../utils/auctionLive'
 import { bidErrorMessage } from '../../utils/apiError'
 import { STANDING } from '../../utils/standing'
@@ -125,6 +126,7 @@ export default function AuctionPanel({ initial }) {
   const standing = myStanding(auction, userId, myMax != null || bids.some((b) => b.bidderId === userId))
   const bidAmount = typedBid ?? String(nextMinBid(auction))
   const price = auction.currentHighestBid ?? auction.startingPrice
+  const reserve = reserveNote(auction)
 
   return (
     <div className="mt-6 border border-tray bg-white shadow-sm rounded-2xl p-5">
@@ -152,6 +154,15 @@ export default function AuctionPanel({ initial }) {
       </p>
 
       <SellerReputation sellerId={auction.sellerId} />
+
+      {reserve && (
+        <p
+          role="status"
+          className={`mt-3 text-sm border rounded px-3 py-2 ${reserve.tone === 'ok' ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}
+        >
+          {reserve.text}
+        </p>
+      )}
 
       {standing && (
         <p className={`mt-3 text-sm border rounded px-3 py-2 ${STANDING[standing].className}`} role="status">
