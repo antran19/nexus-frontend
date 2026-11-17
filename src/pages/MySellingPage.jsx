@@ -6,6 +6,7 @@ import CreateAuctionForm from '../components/seller/CreateAuctionForm'
 import { useProductNames } from '../components/useProductNames'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
+import { sellerReserveNote } from '../utils/auctionForm'
 import { appendPage, hasMorePages, PAGE_SIZE } from '../utils/myBidding'
 import { saleOutcome, STATUS_BADGE, STATUS_TABS, summarizeSelling } from '../utils/mySelling'
 
@@ -108,6 +109,7 @@ export default function MySellingPage() {
             const badge = STATUS_BADGE[item.status]
             const outcome = saleOutcome(item)
             const result = outcome && outcomeText(outcome)
+            const reserve = sellerReserveNote(item)
             return (
               <li key={item.auctionId}>
                 <Link
@@ -136,6 +138,7 @@ export default function MySellingPage() {
                       <dd className="text-gray-900">{when(item.endTime)}</dd>
                     </div>
                   </dl>
+                  {reserve && <p className={`mt-3 text-sm ${reserve.met ? 'text-green-700' : 'text-amber-700'}`}>{reserve.text}</p>}
                   {result && <p className={`mt-3 text-sm ${result.className}`}>{result.text}</p>}
                 </Link>
               </li>
