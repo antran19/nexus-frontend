@@ -42,6 +42,11 @@ export function cancelOrder(orderId) {
 }
 
 // Seller: every order that holds at least one of my products, in any status, newest first (commerce-service).
+// The invoice of a paid (or refunded) order. 409 INVOICE_NOT_AVAILABLE while the order is unpaid.
+export function getInvoice(orderId) {
+  return apiClient.get(`/api/v1/orders/${orderId}/invoice`)
+}
+
 export function getSellingOrders() {
   return apiClient.get('/api/v1/orders/selling')
 }
