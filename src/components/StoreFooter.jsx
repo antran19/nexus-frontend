@@ -34,7 +34,7 @@ const COLUMNS = [
 // site really has (no hotline, certificates or partner logos that do not exist).
 export default function StoreFooter() {
   return (
-    <footer className="border-t border-tray bg-peach text-cocoa">
+    <footer className="border-t border-tray bg-peach text-cocoa print:hidden">
       <div className="max-w-6xl mx-auto px-6 py-12 grid gap-10 md:grid-cols-5">
         <div className="md:col-span-2">
           <p className="font-display text-2xl font-extrabold tracking-tight text-brand">NEXUS</p>

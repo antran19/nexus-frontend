@@ -12,6 +12,7 @@ import MyBiddingPage from './pages/MyBiddingPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import MyOrdersPage from './pages/MyOrdersPage'
+import InvoicePage from './pages/InvoicePage'
 import MySellingPage from './pages/MySellingPage'
 import SellerDashboardPage from './pages/SellerDashboardPage'
 import SellerOrdersPage from './pages/SellerOrdersPage'
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/me/dashboard" element={<BuyerDashboardPage />} />
               <Route path="/me/bidding" element={<MyBiddingPage />} />
               <Route path="/me/orders" element={<MyOrdersPage />} />
+              <Route path="/me/orders/:orderId/invoice" element={<InvoicePage />} />
               <Route path="/me/selling" element={<MySellingPage />} />
               <Route path="/me/selling/dashboard" element={<SellerDashboardPage />} />
               <Route path="/me/selling/orders" element={<SellerOrdersPage />} />

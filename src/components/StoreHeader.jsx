@@ -39,7 +39,7 @@ export default function StoreHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-tray bg-white">
+    <header className="sticky top-0 z-40 border-b border-tray bg-white print:hidden">
       <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Link to="/" onClick={() => window.scrollTo({ top: 0 })} className="font-display text-2xl font-extrabold tracking-tight text-brand">
           NEXUS

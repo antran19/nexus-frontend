@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { confirmCashPayment, getSellingOrders, markOrderShipped } from '../api/orders'
 import PageHero from '../components/PageHero'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
+import { canShowInvoice } from '../utils/invoice'
 import { isSeller } from '../utils/mySelling'
 import { needsCashConfirmation, PAYMENT_LABEL, paymentChoiceError, paymentMethodOf } from '../utils/paymentMethod'
 import {
@@ -171,6 +173,9 @@ export default function SellerOrdersPage() {
               </p>
               <p className="mt-1 text-xs text-gray-500">Thanh toán: {PAYMENT_LABEL[paymentMethodOf(order)]}</p>
               {order.shippedAt && <p className="mt-1 text-sm text-green-700">Đã giao lúc {when(order.shippedAt)}</p>}
+              {canShowInvoice(order) && (
+                <Link to={`/me/orders/${order.id}/invoice`} className="mt-2 inline-block text-sm text-brand underline">Xem hóa đơn</Link>
+              )}
 
               {needsCashConfirmation(order) && (
                 <div className="mt-4 flex flex-wrap items-center gap-2">

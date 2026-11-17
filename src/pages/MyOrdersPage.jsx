@@ -4,6 +4,7 @@ import { getMyOrders } from '../api/orders'
 import OrderActions from '../components/OrderActions'
 import PageHero from '../components/PageHero'
 import { errorMessage } from '../utils/apiError'
+import { canShowInvoice } from '../utils/invoice'
 import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState } from '../utils/myOrders'
 import { PAYMENT_LABEL, paymentMethodOf } from '../utils/paymentMethod'
 import { addressLine, replaceOrder } from '../utils/sellerOrders'
@@ -123,6 +124,9 @@ export default function MyOrdersPage() {
                 </p>
                 <p className="mt-1 text-xs text-gray-500">Thanh toán: {PAYMENT_LABEL[paymentMethodOf(order)]}</p>
                 {order.paidAt && <p className="mt-1 text-xs text-gray-500">Đã thanh toán lúc {when(order.paidAt)}</p>}
+                {canShowInvoice(order) && (
+                  <Link to={`/me/orders/${order.id}/invoice`} className="mt-2 inline-block text-sm text-brand underline">Xem hóa đơn</Link>
+                )}
                 {order.shippedAt && <p className="mt-1 text-sm text-green-700">Người bán đã giao lúc {when(order.shippedAt)}</p>}
 
                 <OrderActions order={order} onChanged={changed} onStale={reload} onNotice={setNotice} />

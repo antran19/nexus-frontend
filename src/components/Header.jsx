@@ -55,7 +55,7 @@ export default function Header() {
   const buttonClass = 'text-sm px-3 py-1.5 rounded-full bg-gold text-ink font-medium hover:bg-gold-soft'
 
   return (
-    <header className={`flex items-center justify-between px-6 py-4 ${barClass}`}>
+    <header className={`flex items-center justify-between px-6 py-4 print:hidden ${barClass}`}>
       <Link to="/" onClick={handleBrandClick} className={`text-xl font-semibold ${brandClass}`}>
         Nexus
       </Link>
