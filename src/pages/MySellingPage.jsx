@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMySelling } from '../api/auctions'
 import PageHero from '../components/PageHero'
+import CreateAuctionForm from '../components/seller/CreateAuctionForm'
 import { useProductNames } from '../components/useProductNames'
+import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import { appendPage, hasMorePages, PAGE_SIZE } from '../utils/myBidding'
 import { saleOutcome, STATUS_BADGE, STATUS_TABS, summarizeSelling } from '../utils/mySelling'
@@ -28,6 +30,7 @@ function outcomeText(outcome) {
 
 // The auctions the signed-in seller created (API.md 5.11), newest first, with how many bids each drew.
 export default function MySellingPage() {
+  const { user } = useAuth()
   const [items, setItems] = useState([])
   const [page, setPage] = useState(0)
   const [more, setMore] = useState(false)
@@ -68,6 +71,8 @@ export default function MySellingPage() {
     <>
       <PageHero eyebrow="Đấu giá" title="Phiên đang bán" />
       <div className="max-w-5xl mx-auto px-6 py-12">
+        <CreateAuctionForm sellerId={user.sub} onCreated={() => load(0, status)} />
+
         {live > 0 && (
           <p className="text-sm text-gray-600 mb-4">
             {live} phiên đang diễn ra, đã có {liveBids} lượt giá.
