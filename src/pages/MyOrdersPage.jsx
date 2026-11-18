@@ -5,7 +5,7 @@ import OrderActions from '../components/OrderActions'
 import PageHero from '../components/PageHero'
 import { errorMessage } from '../utils/apiError'
 import { canShowInvoice } from '../utils/invoice'
-import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState } from '../utils/myOrders'
+import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState, searchMyOrders } from '../utils/myOrders'
 import { PAYMENT_LABEL, paymentMethodOf } from '../utils/paymentMethod'
 import { addressLine, replaceOrder } from '../utils/sellerOrders'
 
@@ -16,6 +16,7 @@ const when = (value) => new Date(value).toLocaleString('vi-VN')
 export default function MyOrdersPage() {
   const location = useLocation()
   const [filter, setFilter] = useState('ALL')
+  const [search, setSearch] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
   // The checkout page can hand over a first line to show (an order placed to be paid in cash).
@@ -45,7 +46,7 @@ export default function MyOrdersPage() {
     setState((current) => ({ ...current, orders: replaceOrder(current.orders, updated) }))
   }, [])
 
-  const shown = filterMyOrders(state.orders, filter)
+  const shown = searchMyOrders(filterMyOrders(state.orders, filter), search)
 
   return (
     <>
@@ -64,6 +65,25 @@ export default function MyOrdersPage() {
               {entry.label}
             </button>
           ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label htmlFor="order-search" className="sr-only">Tìm đơn hàng</label>
+          <input
+            id="order-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            maxLength={100}
+            placeholder="Tìm theo mã đơn hoặc tên sản phẩm..."
+            className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          />
+          {search.trim() && (
+            <>
+              <span role="status" className="text-sm text-gray-500">{shown.length} đơn phù hợp</span>
+              <button type="button" onClick={() => setSearch('')} className="text-sm underline text-gray-700">Xóa tìm kiếm</button>
+            </>
+          )}
         </div>
 
         {notice && (
@@ -86,7 +106,7 @@ export default function MyOrdersPage() {
           </p>
         )}
         {state.status === 'ready' && state.orders.length > 0 && shown.length === 0 && (
-          <p className="mt-6 text-sm text-gray-500">Không có đơn nào ở mục này.</p>
+          <p className="mt-6 text-sm text-gray-500">{search.trim() ? 'Không có đơn nào khớp với từ khóa.' : 'Không có đơn nào ở mục này.'}</p>
         )}
 
         <ul className="mt-6 space-y-3">

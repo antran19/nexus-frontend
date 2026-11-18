@@ -31,6 +31,19 @@ export function filterMyOrders(orders, filterValue) {
   return orders.filter((order) => orderState(order).key === filterValue)
 }
 
+// Lower case without accents, so "dong ho" finds "Đồng hồ".
+const plain = (text) =>
+  String(text ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u0111/gi, 'd').toLowerCase()
+
+// The orders whose id or one of whose product names contains the typed words. An empty search keeps every
+// order. The page shows "#" before the first 8 characters of the id, so a leading "#" is ignored.
+export function searchMyOrders(orders, term) {
+  const wanted = plain(term).trim().replace(/^#/, '')
+  if (!wanted) return orders
+  return orders.filter((order) =>
+    plain(order.id).includes(wanted) || (order.items ?? []).some((item) => plain(item.productName).includes(wanted)))
+}
+
 // Newest first, whatever order the server answered in. The list given is not changed.
 export function newestFirst(orders) {
   return [...orders].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))

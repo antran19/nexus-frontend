@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   addressBody, addressFieldErrors, canCancel, canPay, filterMyOrders, needsAddress, newestFirst, orderActionError,
-  orderState, paymentUrls, validateAddress,
+  orderState, paymentUrls, searchMyOrders, validateAddress,
 } from './myOrders.js'
 
 const orders = [
@@ -82,4 +82,36 @@ test('each answer of pay and cancel has its own sentence', () => {
   assert.match(orderActionError(fail('NOT_THE_BUYER', 403), 'x'), /không phải của bạn/)
   assert.match(orderActionError({ response: { status: 401, data: {} } }, 'x'), /hết hạn/)
   assert.equal(orderActionError(fail('SOMETHING'), 'fallback'), 'fallback')
+})
+
+const named = [
+  { id: 'aa11bb22-0000-4000-8000-000000000001', items: [{ productName: 'Đồng hồ cổ Nexus' }, { productName: 'Ví da Nexus' }] },
+  { id: 'cc33dd44-0000-4000-8000-000000000002', items: [{ productName: 'Giày thể thao' }] },
+  { id: 'ee55ff66-0000-4000-8000-000000000003', items: [] },
+]
+
+test('an empty search keeps every order and the original list is not changed', () => {
+  assert.equal(searchMyOrders(named, '').length, 3)
+  assert.equal(searchMyOrders(named, '   ').length, 3)
+  assert.equal(searchMyOrders(named, undefined).length, 3)
+  assert.equal(named.length, 3)
+})
+
+test('the search finds an order by the product name, ignoring case and accents', () => {
+  assert.deepEqual(searchMyOrders(named, 'dong ho').map((o) => o.id.slice(0, 4)), ['aa11'])
+  assert.deepEqual(searchMyOrders(named, 'VÍ DA').map((o) => o.id.slice(0, 4)), ['aa11'])
+  assert.deepEqual(searchMyOrders(named, 'nexus').map((o) => o.id.slice(0, 4)), ['aa11'])
+  assert.deepEqual(searchMyOrders(named, 'giay').map((o) => o.id.slice(0, 4)), ['cc33'])
+  assert.equal(searchMyOrders(named, 'khong co').length, 0)
+})
+
+test('the search finds an order by its id, with or without the # shown on the page', () => {
+  assert.deepEqual(searchMyOrders(named, 'cc33dd44').map((o) => o.id.slice(0, 4)), ['cc33'])
+  assert.deepEqual(searchMyOrders(named, '#CC33').map((o) => o.id.slice(0, 4)), ['cc33'])
+  assert.deepEqual(searchMyOrders(named, 'ee55ff66-0000').map((o) => o.id.slice(0, 4)), ['ee55'])
+})
+
+test('an order without items does not break the search', () => {
+  assert.deepEqual(searchMyOrders([{ id: 'zz99', items: undefined }], 'zz99').map((o) => o.id), ['zz99'])
+  assert.equal(searchMyOrders([{ id: 'zz99' }], 'ao').length, 0)
 })
