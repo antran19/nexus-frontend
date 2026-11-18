@@ -87,9 +87,14 @@ export default function Header() {
               </>
             )}
             {isAdmin(user) && (
-              <Link to="/admin/seller-requests" className={linkClass}>
-                Duyệt người bán
-              </Link>
+              <>
+                <Link to="/admin/seller-requests" className={linkClass}>
+                  Duyệt người bán
+                </Link>
+                <Link to="/admin/categories" className={linkClass}>
+                  Danh mục
+                </Link>
+              </>
             )}
             {isStaff(user) && (
               <>

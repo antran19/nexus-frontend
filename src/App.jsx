@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MyBiddingPage from './pages/MyBiddingPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
+import AdminCategoriesPage from './pages/AdminCategoriesPage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import MyOrdersPage from './pages/MyOrdersPage'
 import InvoicePage from './pages/InvoicePage'
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/me/selling/orders" element={<SellerOrdersPage />} />
               <Route path="/admin/seller-requests" element={<SellerRequestsAdminPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
+              <Route path="/admin/categories" element={<AdminCategoriesPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
