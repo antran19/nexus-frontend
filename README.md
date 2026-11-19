@@ -11,8 +11,19 @@ cp .env.example .env.local   # chỉnh VITE_API_BASE_URL nếu Gateway chạy �
 npm run dev
 ```
 
-Cần `api-gateway` + `user-service` + `catalog-service` + `discovery-server` + Postgres
-đang chạy (xem `infra/README.md` trong repo `infra`) để các trang gọi API thật.
+Lệnh hay dùng:
+
+| Lệnh | Việc |
+|---|---|
+| `npm run dev` | Chạy dev server (Vite) |
+| `npm test` | Chạy test (`node --test`, không cần trình duyệt) |
+| `npm run lint` | Kiểm tra mã bằng oxlint |
+| `npm run build` | Build bản production vào `dist/` |
+
+Các trang gọi API thật qua `api-gateway` (cổng 8080) nên cần backend đang chạy (xem
+`infra/README.md` trong repo `infra`): đăng nhập, hồ sơ, sản phẩm cần `user-service` và
+`catalog-service` (kèm `discovery-server` và Postgres); giỏ hàng, thanh toán, đơn hàng cần thêm
+`commerce-service`; đấu giá cần thêm `auction-service`.
 
 ## Cấu trúc thư mục
 
@@ -22,6 +33,8 @@ src/
 ├── components/     # Component dùng lại được nhiều nơi (Header, ProductCard, PrivateRoute)
 ├── context/        # AuthContext: giữ token, decode JWT, login()/logout()
 ├── pages/          # 1 file = 1 route, khai báo route trong App.jsx
+├── utils/          # Hàm thuần (định dạng, kiểm tra form, đổi lỗi API sang tiếng Việt...);
+│                   # mỗi file có file `*.test.js` ngay cạnh
 ├── App.jsx         # Khai báo toàn bộ route
 └── main.jsx        # Entry point
 ```
@@ -43,16 +56,64 @@ src/
   `src/components/landing/Reveal.jsx` là wrapper dùng chung cho fade-in-on-scroll —
   dùng lại nó thay vì tự viết `useGSAP`/`ScrollTrigger` riêng mỗi chỗ.
 
-## Các trang đã có khung
+## Các trang (route)
+
+Khai báo trong `src/App.jsx`. Nhóm "cần đăng nhập" nằm trong `<PrivateRoute />` (chưa đăng
+nhập sẽ chuyển về `/login`); trang có header chung nằm trong `<SiteLayout />`.
+
+**Không cần đăng nhập**
 
 | Route | File | Mô tả |
 |---|---|---|
-| `/` | `pages/LandingPage.jsx` | Trang chủ — hero nhiều video, cuộn đổi cảnh, danh mục, đấu giá nổi bật, đánh giá, CTA |
+| `/` | `pages/LandingPage.jsx` | Trang chủ (xem mục Landing page bên dưới) |
 | `/login` | `pages/LoginPage.jsx` | Đăng nhập |
+| `/forgot-password` | `pages/ForgotPasswordPage.jsx` | Yêu cầu mã đặt lại mật khẩu |
+| `/reset-password` | `pages/ResetPasswordPage.jsx` | Tạo mật khẩu mới |
 | `/register` | `pages/RegisterPage.jsx` | Đăng ký |
-| `/products` | `pages/ProductListPage.jsx` | Danh sách + tìm kiếm sản phẩm (đọc `?categoryId=`) |
+| `/register/seller` | `pages/SellerRegisterPage.jsx` | Đăng ký làm người bán |
+| `/products` | `pages/ProductListPage.jsx` | Danh sách và tìm kiếm sản phẩm (đọc `?categoryId=`) |
 | `/products/:id` | `pages/ProductDetailPage.jsx` | Chi tiết sản phẩm |
-| `/me` | `pages/ProfilePage.jsx` | Ví dụ route cần đăng nhập (`PrivateRoute`) |
+
+**Cần đăng nhập** (người mua)
+
+| Route | File | Mô tả |
+|---|---|---|
+| `/me` | `pages/ProfilePage.jsx` | Thông tin tài khoản, chỉnh sửa |
+| `/me/dashboard` | `pages/BuyerDashboardPage.jsx` | Tổng quan của người mua |
+| `/me/bidding` | `pages/MyBiddingPage.jsx` | Các phiên đã đặt giá |
+| `/me/orders` | `pages/MyOrdersPage.jsx` | Đơn hàng của tôi |
+| `/me/orders/:orderId/invoice` | `pages/InvoicePage.jsx` | Hóa đơn của một đơn |
+| `/cart` | `pages/CartPage.jsx` | Giỏ hàng |
+| `/checkout` | `pages/CheckoutPage.jsx` | Thanh toán, địa chỉ giao hàng |
+| `/payment/success` | `pages/PaymentSuccessPage.jsx` | Xác nhận thanh toán sau khi quay về |
+| `/payment/cancel` | `pages/PaymentCancelPage.jsx` | Thanh toán chưa hoàn tất |
+
+**Cần đăng nhập** (người bán)
+
+| Route | File | Mô tả |
+|---|---|---|
+| `/me/selling` | `pages/MySellingPage.jsx` | Các phiên đang bán |
+| `/me/selling/dashboard` | `pages/SellerDashboardPage.jsx` | Tổng quan bán hàng |
+| `/me/selling/orders` | `pages/SellerOrdersPage.jsx` | Đơn cần giao |
+
+**Cần đăng nhập** (quản trị)
+
+| Route | File | Mô tả |
+|---|---|---|
+| `/admin/seller-requests` | `pages/SellerRequestsAdminPage.jsx` | Duyệt yêu cầu làm người bán |
+| `/admin/orders` | `pages/AdminOrdersPage.jsx` | Quản lý đơn hàng |
+| `/admin/categories` | `pages/AdminCategoriesPage.jsx` | Danh mục sản phẩm (thêm, đổi tên, xóa) |
+| `/admin/users` | `pages/AdminUsersPage.jsx` | Người dùng và uy tín |
+
+Mọi đường dẫn khác hiện `pages/NotFoundPage.jsx`.
+
+## Kiểm thử
+
+Test nằm cạnh mã cần kiểm tra, tên `*.test.js` (ví dụ `src/utils/session.test.js`), dùng bộ chạy
+test có sẵn của Node (`node:test` và `node:assert`), nên chạy `npm test` là đủ, không cần mở
+trình duyệt. Logic cần kiểm tra (ánh xạ lỗi API, kiểm tra form, tính toán hiển thị) được tách
+thành hàm thuần trong `src/utils/` để test không phải dựng giao diện. Khi thêm một file mới vào
+`src/utils/`, thêm luôn file `.test.js` của nó.
 
 ## Landing page (`src/components/landing/`)
 
