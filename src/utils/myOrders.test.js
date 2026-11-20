@@ -15,10 +15,19 @@ const orders = [
 
 test('a paid order is being prepared until it is shipped', () => {
   assert.equal(orderState(orders[1]).label, 'Đang chuẩn bị hàng')
-  assert.equal(orderState(orders[2]).label, 'Đã giao')
+  assert.equal(orderState(orders[2]).label, 'Đã gửi hàng')
   assert.equal(orderState(orders[0]).label, 'Chờ thanh toán')
   assert.equal(orderState(orders[3]).label, 'Đã hủy')
   assert.equal(orderState(orders[4]).label, 'Đã hoàn tiền')
+})
+
+test('a shipped order shows where its parcel is', () => {
+  const at = (status) => ({ id: 'p', status: 'PAID', shippedAt: '2026-11-13T12:00:00Z', shipment: { carrier: 'SIMULATED', trackingCode: 'NXS1', status } })
+  assert.equal(orderState(at('IN_TRANSIT')).label, 'Đang vận chuyển')
+  assert.equal(orderState(at('DELIVERED')).label, 'Đã giao tới nơi')
+  assert.equal(orderState(at('RECEIVED')).label, 'Đã nhận hàng')
+  // every parcel state stays under the one SHIPPED filter
+  for (const status of ['SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'RECEIVED']) assert.equal(orderState(at(status)).key, 'SHIPPED')
 })
 
 test('the filters split the orders and ALL keeps every one', () => {

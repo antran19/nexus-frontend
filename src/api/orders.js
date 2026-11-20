@@ -51,9 +51,20 @@ export function getSellingOrders() {
   return apiClient.get('/api/v1/orders/selling')
 }
 
-// Seller: "I shipped this". Only a PAID order that has not been shipped yet; answers the order with shippedAt set.
-export function markOrderShipped(orderId) {
-  return apiClient.post(`/api/v1/orders/${orderId}/mark-shipped`)
+// Seller: "I shipped this". Only a PAID order that has not been shipped yet; answers the order with shippedAt set and
+// its shipment (carrier, tracking code, status). carrier is a code from getCarriers(); left out it is the simulated one.
+export function markOrderShipped(orderId, carrier) {
+  return apiClient.post(`/api/v1/orders/${orderId}/mark-shipped`, undefined, { params: carrier ? { carrier } : undefined })
+}
+
+// Seller: the shipping companies to choose from when shipping: [{ code, name }].
+export function getCarriers() {
+  return apiClient.get('/api/v1/orders/carriers')
+}
+
+// Buyer: "the parcel arrived". Only once it is DELIVERED; answers the order with the shipment RECEIVED.
+export function confirmOrderReceived(orderId) {
+  return apiClient.post(`/api/v1/orders/${orderId}/confirm-received`)
 }
 
 // Buyer: every order I placed, in any status (commerce-service). Orders won at an auction are in it too.

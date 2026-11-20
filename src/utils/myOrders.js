@@ -1,4 +1,5 @@
 // Pure helpers for the buyer's order page, kept apart from React so `npm test` can cover them.
+import { shipmentStatusLabel } from './shipment.js'
 
 // What the buyer sees for an order. A paid order that has not been shipped yet is "being prepared".
 export function orderState(order) {
@@ -7,7 +8,7 @@ export function orderState(order) {
       return { key: 'AWAITING', label: 'Chờ thanh toán', className: 'text-amber-700 border-amber-300 bg-amber-50' }
     case 'PAID':
       return order.shippedAt
-        ? { key: 'SHIPPED', label: 'Đã giao', className: 'text-green-700 border-green-300 bg-green-50' }
+        ? { key: 'SHIPPED', label: shipmentStatusLabel(order.shipment?.status ?? 'SHIPPED'), className: 'text-green-700 border-green-300 bg-green-50' }
         : { key: 'PREPARING', label: 'Đang chuẩn bị hàng', className: 'text-blue-700 border-blue-300 bg-blue-50' }
     case 'REFUNDED':
       return { key: 'CLOSED', label: 'Đã hoàn tiền', className: 'text-red-700 border-red-300 bg-red-50' }
@@ -22,7 +23,7 @@ export const ORDER_FILTERS = [
   { value: 'ALL', label: 'Tất cả' },
   { value: 'AWAITING', label: 'Chờ thanh toán' },
   { value: 'PREPARING', label: 'Đang chuẩn bị' },
-  { value: 'SHIPPED', label: 'Đã giao' },
+  { value: 'SHIPPED', label: 'Đã gửi hàng' },
   { value: 'CLOSED', label: 'Đã hủy / hoàn tiền' },
 ]
 
