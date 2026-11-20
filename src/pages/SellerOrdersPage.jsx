@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { confirmCashPayment, getSellingOrders, markOrderShipped } from '../api/orders'
+import { confirmCashPayment, getCarriers, getSellingOrders, markOrderShipped } from '../api/orders'
+import ShipmentTracker from '../components/ShipmentTracker'
 import PageHero from '../components/PageHero'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import { canShowInvoice } from '../utils/invoice'
 import { isSeller } from '../utils/mySelling'
+import { carrierName } from '../utils/shipment'
 import { needsCashConfirmation, PAYMENT_LABEL, paymentChoiceError, paymentMethodOf } from '../utils/paymentMethod'
 import {
   addressLine, countByTab, filterOrders, myItems, myTotal, ORDER_TABS, replaceOrder, shipErrorMessage, STATUS_LABEL,
@@ -35,6 +37,9 @@ export default function SellerOrdersPage() {
   const [cashConfirmingId, setCashConfirmingId] = useState('')
   const [busyId, setBusyId] = useState('')
   const [notice, setNotice] = useState(null)
+  // The shipping companies to choose from; the simulated one is always there, the list from the server replaces it.
+  const [carriers, setCarriers] = useState([{ code: 'SIMULATED', name: carrierName('SIMULATED') }])
+  const [carrier, setCarrier] = useState('SIMULATED')
 
   useEffect(() => {
     if (!seller) return undefined
@@ -51,6 +56,21 @@ export default function SellerOrdersPage() {
     }
   }, [seller, attempt])
 
+  useEffect(() => {
+    if (!seller) return undefined
+    let cancelled = false
+    getCarriers()
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data) || !data.length) return
+        setCarriers(data)
+        setCarrier((current) => (data.some((item) => item.code === current) ? current : data[0].code))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [seller])
+
   const reload = useCallback(() => {
     setState((current) => ({ ...current, status: 'loading' }))
     setAttempt((value) => value + 1)
@@ -60,9 +80,9 @@ export default function SellerOrdersPage() {
     setBusyId(order.id)
     setNotice(null)
     try {
-      const { data } = await markOrderShipped(order.id)
+      const { data } = await markOrderShipped(order.id, carrier)
       setState((current) => ({ ...current, orders: replaceOrder(current.orders, data) }))
-      setNotice({ kind: 'success', text: `Đã đánh dấu đơn #${order.id.slice(0, 8)} là đã giao. Người mua sẽ nhận được thông báo.` })
+      setNotice({ kind: 'success', text: `Đã gửi hàng đơn #${order.id.slice(0, 8)}${data.shipment?.trackingCode ? `, mã vận đơn ${data.shipment.trackingCode}` : ''}. Người mua sẽ nhận được thông báo.` })
     } catch (err) {
       setNotice({ kind: 'error', text: shipErrorMessage(err) })
       reload()
@@ -172,7 +192,7 @@ export default function SellerOrdersPage() {
                 <span className="text-gray-500">Giao tới: </span>{addressLine(order.shippingAddress)}
               </p>
               <p className="mt-1 text-xs text-gray-500">Thanh toán: {PAYMENT_LABEL[paymentMethodOf(order)]}</p>
-              {order.shippedAt && <p className="mt-1 text-sm text-green-700">Đã giao lúc {when(order.shippedAt)}</p>}
+              <ShipmentTracker order={order} readOnly />
               {canShowInvoice(order) && (
                 <Link to={`/me/orders/${order.id}/invoice`} className="mt-2 inline-block text-sm text-brand underline">Xem hóa đơn</Link>
               )}
@@ -211,14 +231,23 @@ export default function SellerOrdersPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   {confirmingId === order.id ? (
                     <>
-                      <span className="text-sm text-gray-700">Bạn đã gửi hàng cho người mua?</span>
+                      <span className="text-sm text-gray-700">Gửi hàng cho người mua bằng:</span>
+                      <select
+                        aria-label="Đơn vị vận chuyển"
+                        value={carrier}
+                        disabled={busyId === order.id}
+                        onChange={(event) => setCarrier(event.target.value)}
+                        className="rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                      >
+                        {carriers.map((item) => <option key={item.code} value={item.code}>{item.name ?? carrierName(item.code)}</option>)}
+                      </select>
                       <button
                         type="button"
                         disabled={busyId === order.id}
                         onClick={() => ship(order)}
                         className="bg-brand text-white rounded px-4 py-1.5 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                       >
-                        {busyId === order.id ? 'Đang gửi...' : 'Xác nhận đã giao'}
+                        {busyId === order.id ? 'Đang gửi...' : 'Xác nhận gửi hàng'}
                       </button>
                       <button type="button" disabled={busyId === order.id} onClick={() => setConfirmingId('')} className="text-sm text-gray-600 px-2">
                         Hủy
