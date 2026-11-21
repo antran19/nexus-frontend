@@ -8,23 +8,46 @@ export function isStaff(user) {
   return user?.role === 'ADMIN' || user?.role === 'SUPPORT_STAFF'
 }
 
-// One tab per thing the staff has to decide. An order that was paid and not shipped, or shipped, can be refunded.
+export const PAGE_SIZE = 20
+
+// One tab per thing the staff has to decide. `status` is what the server filters by (no status = every order);
+// PAID and SHIPPED are both PAID orders on the server, `matches` then splits them by whether the seller shipped.
 export const STAFF_TABS = [
-  { value: 'PAID', label: 'Đã thanh toán', matches: (order) => order.status === 'PAID' && !order.shippedAt },
-  { value: 'SHIPPED', label: 'Đã giao', matches: (order) => order.status === 'PAID' && Boolean(order.shippedAt) },
-  { value: 'REFUNDED', label: 'Đã hoàn tiền', matches: (order) => order.status === 'REFUNDED' },
-  { value: 'AWAITING', label: 'Chờ thanh toán', matches: (order) => order.status === 'AWAITING_PAYMENT' },
-  { value: 'CANCELLED', label: 'Đã hủy', matches: (order) => order.status === 'CANCELLED' },
-  { value: 'ALL', label: 'Tất cả', matches: () => true },
+  { value: 'PAID', label: 'Đã thanh toán', status: 'PAID', matches: (order) => order.status === 'PAID' && !order.shippedAt },
+  { value: 'SHIPPED', label: 'Đã giao', status: 'PAID', matches: (order) => order.status === 'PAID' && Boolean(order.shippedAt) },
+  { value: 'REFUNDED', label: 'Đã hoàn tiền', status: 'REFUNDED', matches: (order) => order.status === 'REFUNDED' },
+  { value: 'AWAITING', label: 'Chờ thanh toán', status: 'AWAITING_PAYMENT', matches: (order) => order.status === 'AWAITING_PAYMENT' },
+  { value: 'CANCELLED', label: 'Đã hủy', status: 'CANCELLED', matches: (order) => order.status === 'CANCELLED' },
+  { value: 'ALL', label: 'Tất cả', status: undefined, matches: () => true },
 ]
+
+export const PAYMENT_FILTERS = [
+  { value: '', label: 'Mọi cách thanh toán' },
+  { value: 'STRIPE_CARD', label: 'Thẻ' },
+  { value: 'CASH', label: 'Tiền mặt' },
+]
+
+// A day picked in a date input ("2026-11-20") as the first / last moment of that day in the staff's own time zone.
+export const startOfDay = (day) => (day ? new Date(`${day}T00:00:00`).toISOString() : undefined)
+export const endOfDay = (day) => (day ? new Date(`${day}T23:59:59.999`).toISOString() : undefined)
+
+// The query the server's GET /orders understands for the tab, payment method and days chosen; empty choices are left out.
+export function buildOrderQuery({ tab, paymentMethod, fromDay, toDay, page = 0 }) {
+  const status = (STAFF_TABS.find((entry) => entry.value === tab) ?? STAFF_TABS[0]).status
+  const query = { page, size: PAGE_SIZE, status, paymentMethod: paymentMethod || undefined, from: startOfDay(fromDay), to: endOfDay(toDay) }
+  return Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined))
+}
+
+// The server answers a full page while there are more orders behind it; a short page is the last one.
+export const hasNextPage = (receivedCount) => receivedCount >= PAGE_SIZE
+
+export function validateDays(fromDay, toDay) {
+  return fromDay && toDay && fromDay > toDay ? 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.' : ''
+}
 
 export function filterStaffOrders(orders, tabValue) {
   const tab = STAFF_TABS.find((entry) => entry.value === tabValue) ?? STAFF_TABS[0]
   return orders.filter(tab.matches)
-}
-
-export function countByStaffTab(orders) {
-  return Object.fromEntries(STAFF_TABS.map((tab) => [tab.value, orders.filter(tab.matches).length]))
 }
 
 // Search by a piece of the order id, the buyer id or the auction id; empty search keeps everything.

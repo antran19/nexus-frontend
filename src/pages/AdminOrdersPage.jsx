@@ -5,8 +5,8 @@ import ReturnRequestsPanel from '../components/ReturnRequestsPanel'
 import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import {
-  canRefund, canRequestReturn, countByStaffTab, filterStaffOrders, isStaff, matchesSearch, newestFirst,
-  refundErrorMessage, refundNextStep, replaceOrder, returnErrorMessage, STAFF_TABS, validateReason,
+  buildOrderQuery, canRefund, canRequestReturn, filterStaffOrders, hasNextPage, isStaff, matchesSearch, PAYMENT_FILTERS,
+  refundErrorMessage, refundNextStep, replaceOrder, returnErrorMessage, STAFF_TABS, validateDays, validateReason,
 } from '../utils/adminOrders'
 import { orderState } from '../utils/myOrders'
 import { addressLine } from '../utils/sellerOrders'
@@ -21,9 +21,13 @@ export default function AdminOrdersPage() {
   const staff = isStaff(user)
   const [section, setSection] = useState('ORDERS') // ORDERS | RETURNS
   const [tab, setTab] = useState('PAID')
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [fromDay, setFromDay] = useState('')
+  const [toDay, setToDay] = useState('')
+  const [page, setPage] = useState(0)
   const [search, setSearch] = useState('')
   const [attempt, setAttempt] = useState(0)
-  const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
+  const [state, setState] = useState({ status: 'loading', orders: [], received: 0, message: '' })
   const [refunding, setRefunding] = useState(null) // { id, reason, error }
   const [returning, setReturning] = useState(null) // { id, reason, error }
   const [returnsKey, setReturnsKey] = useState(0)
@@ -31,19 +35,38 @@ export default function AdminOrdersPage() {
   const [notice, setNotice] = useState(null)
 
   useEffect(() => {
-    if (!staff) return undefined
+    if (!staff || validateDays(fromDay, toDay)) return undefined
     let cancelled = false
-    getAllOrders()
+    getAllOrders(buildOrderQuery({ tab, paymentMethod, fromDay, toDay, page }))
       .then(({ data }) => {
-        if (!cancelled) setState({ status: 'ready', orders: newestFirst(Array.isArray(data) ? data : []), message: '' })
+        const orders = Array.isArray(data) ? data : []
+        if (!cancelled) setState({ status: 'ready', orders, received: orders.length, message: '' })
       })
       .catch((err) => {
-        if (!cancelled) setState({ status: 'error', orders: [], message: errorMessage(err, 'Không tải được danh sách đơn, vui lòng thử lại.') })
+        if (!cancelled) setState({ status: 'error', orders: [], received: 0, message: errorMessage(err, 'Không tải được danh sách đơn, vui lòng thử lại.') })
       })
     return () => {
       cancelled = true
     }
-  }, [staff, attempt])
+  }, [staff, attempt, tab, paymentMethod, fromDay, toDay, page])
+
+  // Any change of the filters starts again from the first page.
+  function choose(setter) {
+    return (value) => {
+      setter(value)
+      setPage(0)
+      setState((current) => ({ ...current, status: 'loading' }))
+    }
+  }
+  const chooseTab = choose(setTab)
+  const choosePayment = choose(setPaymentMethod)
+  const chooseFromDay = choose(setFromDay)
+  const chooseToDay = choose(setToDay)
+
+  function goToPage(next) {
+    setPage(next)
+    setState((current) => ({ ...current, status: 'loading' }))
+  }
 
   const reload = useCallback(() => {
     setState((current) => ({ ...current, status: 'loading' }))
@@ -105,7 +128,7 @@ export default function AdminOrdersPage() {
     )
   }
 
-  const counts = countByStaffTab(state.orders)
+  const daysProblem = validateDays(fromDay, toDay)
   const shown = filterStaffOrders(state.orders, tab).filter((order) => matchesSearch(order, search))
 
   return (
@@ -136,11 +159,10 @@ export default function AdminOrdersPage() {
                 type="button"
                 role="tab"
                 aria-selected={tab === entry.value}
-                onClick={() => setTab(entry.value)}
+                onClick={() => chooseTab(entry.value)}
                 className={`text-sm rounded-full border px-4 py-1.5 ${tab === entry.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
               >
                 {entry.label}
-                {state.status === 'ready' && <span className="ml-1.5 opacity-70">{counts[entry.value]}</span>}
               </button>
             ))}
           </div>
@@ -153,6 +175,33 @@ export default function AdminOrdersPage() {
             className="border border-gray-300 rounded px-3 py-2 text-sm w-full sm:w-72"
           />
         </div>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3 text-sm text-gray-700">
+          <select
+            aria-label="Cách thanh toán"
+            value={paymentMethod}
+            onChange={(e) => choosePayment(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 bg-white"
+          >
+            {PAYMENT_FILTERS.map((entry) => <option key={entry.value} value={entry.value}>{entry.label}</option>)}
+          </select>
+          <label className="flex flex-col gap-1">
+            Từ ngày
+            <input type="date" value={fromDay} max={toDay || undefined} onChange={(e) => chooseFromDay(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5" />
+          </label>
+          <label className="flex flex-col gap-1">
+            Đến ngày
+            <input type="date" value={toDay} min={fromDay || undefined} onChange={(e) => chooseToDay(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5" />
+          </label>
+          {(paymentMethod || fromDay || toDay) && (
+            <button type="button" onClick={() => { choosePayment(''); setFromDay(''); setToDay('') }} className="text-sm underline text-gray-600 pb-2">
+              Xóa lọc
+            </button>
+          )}
+        </div>
+        {daysProblem && <p role="alert" className="mt-2 text-sm text-red-600">{daysProblem}</p>}
 
         {notice && (
           <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-sm ${notice.kind === 'error' ? 'text-red-600' : 'text-green-700'}`}>
@@ -168,7 +217,9 @@ export default function AdminOrdersPage() {
           </p>
         )}
         {state.status === 'ready' && shown.length === 0 && (
-          <p className="mt-6 text-sm text-gray-500">Không có đơn nào ở mục này.</p>
+          <p className="mt-6 text-sm text-gray-500">
+            {state.received === 0 ? 'Không có đơn nào khớp bộ lọc.' : 'Trang này không có đơn nào ở mục này, xem trang tiếp theo.'}
+          </p>
         )}
 
         <ul className="mt-6 space-y-3">
@@ -281,6 +332,20 @@ export default function AdminOrdersPage() {
             )
           })}
         </ul>
+
+        {state.status === 'ready' && (page > 0 || hasNextPage(state.received)) && (
+          <nav aria-label="Phân trang" className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <button type="button" disabled={page === 0} onClick={() => goToPage(page - 1)}
+              className="border border-gray-300 rounded px-4 py-1.5 disabled:opacity-40">
+              Trang trước
+            </button>
+            <span aria-live="polite">Trang {page + 1}</span>
+            <button type="button" disabled={!hasNextPage(state.received)} onClick={() => goToPage(page + 1)}
+              className="border border-gray-300 rounded px-4 py-1.5 disabled:opacity-40">
+              Trang sau
+            </button>
+          </nav>
+        )}
         </>}
       </div>
     </>

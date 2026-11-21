@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  canRefund, canRequestReturn, countByStaffTab, filterStaffOrders, isStaff, matchesSearch, newestFirst, refundErrorMessage,
-  refundNextStep, removeReturn, replaceOrder, returnErrorMessage, validateReason,
+  buildOrderQuery, canRefund, canRequestReturn, endOfDay, filterStaffOrders, hasNextPage, isStaff, matchesSearch, newestFirst,
+  PAGE_SIZE, refundErrorMessage, refundNextStep, startOfDay, validateDays, removeReturn, replaceOrder, returnErrorMessage, validateReason,
 } from './adminOrders.js'
 
 const orders = [
@@ -28,7 +28,6 @@ test('each tab holds its orders and ALL holds every one', () => {
   assert.deepEqual(filterStaffOrders(orders, 'AWAITING').map((o) => o.id), ['d4'])
   assert.deepEqual(filterStaffOrders(orders, 'CANCELLED').map((o) => o.id), ['e5'])
   assert.equal(filterStaffOrders(orders, 'ALL').length, 5)
-  assert.deepEqual(countByStaffTab(orders), { PAID: 1, SHIPPED: 1, REFUNDED: 1, AWAITING: 1, CANCELLED: 1, ALL: 5 })
 })
 
 test('search matches a piece of the order, buyer or auction id and an empty search keeps all', () => {
@@ -93,4 +92,39 @@ test('each answer of the return calls has its own sentence', () => {
   assert.match(returnErrorMessage(fail('RETURN_REQUEST_NOT_FOUND', 404)), /Không tìm thấy yêu cầu/)
   assert.match(returnErrorMessage({ response: { status: 403, data: {} } }), /quản trị viên/)
   assert.match(returnErrorMessage(undefined), /Không xử lý được/)
+})
+
+test('the query asks the server for the tab status, payment method, days and page, leaving out what was not chosen', () => {
+  assert.deepEqual(buildOrderQuery({ tab: 'ALL', paymentMethod: '', page: 0 }), { page: 0, size: PAGE_SIZE })
+  assert.deepEqual(buildOrderQuery({ tab: 'REFUNDED', paymentMethod: 'CASH', page: 2 }),
+    { page: 2, size: PAGE_SIZE, status: 'REFUNDED', paymentMethod: 'CASH' })
+  assert.equal(buildOrderQuery({ tab: 'AWAITING' }).status, 'AWAITING_PAYMENT')
+  assert.equal(buildOrderQuery({ tab: 'nonsense' }).status, 'PAID')
+})
+
+test('paid and shipped are the same status for the server, split afterwards by the seller shipping', () => {
+  assert.equal(buildOrderQuery({ tab: 'PAID' }).status, 'PAID')
+  assert.equal(buildOrderQuery({ tab: 'SHIPPED' }).status, 'PAID')
+})
+
+test('a chosen day covers it from its first to its last moment in local time', () => {
+  const query = buildOrderQuery({ tab: 'ALL', fromDay: '2026-11-20', toDay: '2026-11-21' })
+
+  assert.equal(query.from, new Date(2026, 10, 20, 0, 0, 0, 0).toISOString())
+  assert.equal(query.to, new Date(2026, 10, 21, 23, 59, 59, 999).toISOString())
+  assert.equal(startOfDay(''), undefined)
+  assert.equal(endOfDay(undefined), undefined)
+})
+
+test('a full page means there may be a next one, a short page is the last', () => {
+  assert.equal(hasNextPage(PAGE_SIZE), true)
+  assert.equal(hasNextPage(PAGE_SIZE - 1), false)
+  assert.equal(hasNextPage(0), false)
+})
+
+test('the first day may not come after the last day', () => {
+  assert.match(validateDays('2026-11-21', '2026-11-20'), /trước hoặc bằng/)
+  assert.equal(validateDays('2026-11-20', '2026-11-20'), '')
+  assert.equal(validateDays('2026-11-20', ''), '')
+  assert.equal(validateDays('', ''), '')
 })

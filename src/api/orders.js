@@ -72,9 +72,10 @@ export function getMyOrders() {
   return apiClient.get('/api/v1/orders/me')
 }
 
-// Staff (admin, support): every order of every buyer, any status (commerce-service).
-export function getAllOrders() {
-  return apiClient.get('/api/v1/orders')
+// Staff (admin, support): every order of every buyer, newest first, one page at a time (commerce-service).
+// params: { page, size, status, paymentMethod, from, to } (from/to are ISO instants); all optional.
+export function getAllOrders(params) {
+  return apiClient.get('/api/v1/orders', { params })
 }
 
 // Staff: refunds a PAID order and sends the money back through the payment provider. The reason is required.
