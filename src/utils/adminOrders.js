@@ -1,14 +1,16 @@
 // Pure helpers for the staff's order page (all orders, refunds, returns), kept apart from React so `npm test`
 // can cover them.
 
+import { endOfDay, PAGE_SIZE, startOfDay, withoutEmpty } from './orderQuery.js'
+
+export { endOfDay, hasNextPage, PAGE_SIZE, startOfDay, validateDays } from './orderQuery.js'
+
 export const MAX_REASON_LENGTH = 500
 
 // Admin and support staff see every order and handle refunds and returns; the server checks the privilege again.
 export function isStaff(user) {
   return user?.role === 'ADMIN' || user?.role === 'SUPPORT_STAFF'
 }
-
-export const PAGE_SIZE = 20
 
 // One tab per thing the staff has to decide. `status` is what the server filters by (no status = every order);
 // PAID and SHIPPED are both PAID orders on the server, `matches` then splits them by whether the seller shipped.
@@ -27,22 +29,10 @@ export const PAYMENT_FILTERS = [
   { value: 'CASH', label: 'Tiền mặt' },
 ]
 
-// A day picked in a date input ("2026-11-20") as the first / last moment of that day in the staff's own time zone.
-export const startOfDay = (day) => (day ? new Date(`${day}T00:00:00`).toISOString() : undefined)
-export const endOfDay = (day) => (day ? new Date(`${day}T23:59:59.999`).toISOString() : undefined)
-
 // The query the server's GET /orders understands for the tab, payment method and days chosen; empty choices are left out.
 export function buildOrderQuery({ tab, paymentMethod, fromDay, toDay, page = 0 }) {
   const status = (STAFF_TABS.find((entry) => entry.value === tab) ?? STAFF_TABS[0]).status
-  const query = { page, size: PAGE_SIZE, status, paymentMethod: paymentMethod || undefined, from: startOfDay(fromDay), to: endOfDay(toDay) }
-  return Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined))
-}
-
-// The server answers a full page while there are more orders behind it; a short page is the last one.
-export const hasNextPage = (receivedCount) => receivedCount >= PAGE_SIZE
-
-export function validateDays(fromDay, toDay) {
-  return fromDay && toDay && fromDay > toDay ? 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.' : ''
+  return withoutEmpty({ page, size: PAGE_SIZE, status, paymentMethod: paymentMethod || undefined, from: startOfDay(fromDay), to: endOfDay(toDay) })
 }
 
 export function filterStaffOrders(orders, tabValue) {

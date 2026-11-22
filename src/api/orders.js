@@ -67,9 +67,10 @@ export function confirmOrderReceived(orderId) {
   return apiClient.post(`/api/v1/orders/${orderId}/confirm-received`)
 }
 
-// Buyer: every order I placed, in any status (commerce-service). Orders won at an auction are in it too.
-export function getMyOrders() {
-  return apiClient.get('/api/v1/orders/me')
+// Buyer: the orders I placed, newest first, one page at a time (commerce-service). Orders won at an auction are in it too.
+// params: { page, size, status, from, to } (from/to are ISO instants); all optional.
+export function getMyOrders(params) {
+  return apiClient.get('/api/v1/orders/me', { params })
 }
 
 // Staff (admin, support): every order of every buyer, newest first, one page at a time (commerce-service).

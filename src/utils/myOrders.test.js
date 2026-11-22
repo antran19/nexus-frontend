@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  addressBody, addressFieldErrors, canCancel, canPay, filterMyOrders, needsAddress, newestFirst, orderActionError,
+  addressBody, addressFieldErrors, buildMyOrdersQuery, canCancel, canPay, filterMyOrders, needsAddress, newestFirst, orderActionError,
   orderState, paymentUrls, searchMyOrders, validateAddress,
 } from './myOrders.js'
 
@@ -35,7 +35,8 @@ test('the filters split the orders and ALL keeps every one', () => {
   assert.deepEqual(filterMyOrders(orders, 'AWAITING').map((o) => o.id), ['a'])
   assert.deepEqual(filterMyOrders(orders, 'PREPARING').map((o) => o.id), ['b'])
   assert.deepEqual(filterMyOrders(orders, 'SHIPPED').map((o) => o.id), ['c'])
-  assert.deepEqual(filterMyOrders(orders, 'CLOSED').map((o) => o.id), ['d', 'e'])
+  assert.deepEqual(filterMyOrders(orders, 'CANCELLED').map((o) => o.id), ['d'])
+  assert.deepEqual(filterMyOrders(orders, 'REFUNDED').map((o) => o.id), ['e'])
 })
 
 test('newest orders come first and the original list is not changed', () => {
@@ -123,4 +124,24 @@ test('the search finds an order by its id, with or without the # shown on the pa
 test('an order without items does not break the search', () => {
   assert.deepEqual(searchMyOrders([{ id: 'zz99', items: undefined }], 'zz99').map((o) => o.id), ['zz99'])
   assert.equal(searchMyOrders([{ id: 'zz99' }], 'ao').length, 0)
+})
+
+test('the query asks the server for the status of the tab, the days and the page, leaving out what was not chosen', () => {
+  assert.deepEqual(buildMyOrdersQuery({ filter: 'ALL' }), { page: 0, size: 20 })
+  assert.deepEqual(buildMyOrdersQuery({ filter: 'REFUNDED', page: 2 }), { page: 2, size: 20, status: 'REFUNDED' })
+  assert.equal(buildMyOrdersQuery({ filter: 'AWAITING' }).status, 'AWAITING_PAYMENT')
+  assert.equal(buildMyOrdersQuery({ filter: 'CANCELLED' }).status, 'CANCELLED')
+  assert.equal(buildMyOrdersQuery({ filter: 'nonsense' }).status, undefined)
+})
+
+test('preparing and shipped are the same status for the server, split afterwards by the seller shipping', () => {
+  assert.equal(buildMyOrdersQuery({ filter: 'PREPARING' }).status, 'PAID')
+  assert.equal(buildMyOrdersQuery({ filter: 'SHIPPED' }).status, 'PAID')
+})
+
+test('a chosen day covers it from its first to its last moment in local time', () => {
+  const query = buildMyOrdersQuery({ filter: 'ALL', fromDay: '2026-11-20', toDay: '2026-11-21' })
+
+  assert.equal(query.from, new Date(2026, 10, 20, 0, 0, 0, 0).toISOString())
+  assert.equal(query.to, new Date(2026, 10, 21, 23, 59, 59, 999).toISOString())
 })

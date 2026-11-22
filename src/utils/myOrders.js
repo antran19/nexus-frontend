@@ -1,4 +1,5 @@
 // Pure helpers for the buyer's order page, kept apart from React so `npm test` can cover them.
+import { endOfDay, PAGE_SIZE, startOfDay, withoutEmpty } from './orderQuery.js'
 import { shipmentStatusLabel } from './shipment.js'
 
 // What the buyer sees for an order. A paid order that has not been shipped yet is "being prepared".
@@ -19,17 +20,27 @@ export function orderState(order) {
   }
 }
 
+// `status` is what the server filters by (no status = every order). PREPARING and SHIPPED are both PAID orders on
+// the server; filterMyOrders then splits them by whether the seller shipped.
 export const ORDER_FILTERS = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'AWAITING', label: 'Chờ thanh toán' },
-  { value: 'PREPARING', label: 'Đang chuẩn bị' },
-  { value: 'SHIPPED', label: 'Đã gửi hàng' },
-  { value: 'CLOSED', label: 'Đã hủy / hoàn tiền' },
+  { value: 'ALL', label: 'Tất cả', status: undefined },
+  { value: 'AWAITING', label: 'Chờ thanh toán', status: 'AWAITING_PAYMENT' },
+  { value: 'PREPARING', label: 'Đang chuẩn bị', status: 'PAID' },
+  { value: 'SHIPPED', label: 'Đã gửi hàng', status: 'PAID' },
+  { value: 'CANCELLED', label: 'Đã hủy', status: 'CANCELLED' },
+  { value: 'REFUNDED', label: 'Đã hoàn tiền', status: 'REFUNDED' },
 ]
 
 export function filterMyOrders(orders, filterValue) {
   if (filterValue === 'ALL') return orders
+  if (filterValue === 'CANCELLED' || filterValue === 'REFUNDED') return orders.filter((order) => order.status === filterValue)
   return orders.filter((order) => orderState(order).key === filterValue)
+}
+
+// The query GET /orders/me understands for the tab, days and page chosen; what was not chosen is left out.
+export function buildMyOrdersQuery({ filter, fromDay, toDay, page = 0 }) {
+  const status = (ORDER_FILTERS.find((entry) => entry.value === filter) ?? ORDER_FILTERS[0]).status
+  return withoutEmpty({ page, size: PAGE_SIZE, status, from: startOfDay(fromDay), to: endOfDay(toDay) })
 }
 
 // Lower case without accents, so "dong ho" finds "Đồng hồ".

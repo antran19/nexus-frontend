@@ -6,7 +6,8 @@ import PageHero from '../components/PageHero'
 import ShipmentTracker from '../components/ShipmentTracker'
 import { errorMessage } from '../utils/apiError'
 import { canShowInvoice } from '../utils/invoice'
-import { filterMyOrders, newestFirst, ORDER_FILTERS, orderState, searchMyOrders } from '../utils/myOrders'
+import { buildMyOrdersQuery, filterMyOrders, ORDER_FILTERS, orderState, searchMyOrders } from '../utils/myOrders'
+import { hasNextPage, validateDays } from '../utils/orderQuery'
 import { PAYMENT_LABEL, paymentMethodOf } from '../utils/paymentMethod'
 import { addressLine, replaceOrder } from '../utils/sellerOrders'
 
@@ -17,25 +18,47 @@ const when = (value) => new Date(value).toLocaleString('vi-VN')
 export default function MyOrdersPage() {
   const location = useLocation()
   const [filter, setFilter] = useState('ALL')
+  const [fromDay, setFromDay] = useState('')
+  const [toDay, setToDay] = useState('')
+  const [page, setPage] = useState(0)
   const [search, setSearch] = useState('')
   const [attempt, setAttempt] = useState(0)
-  const [state, setState] = useState({ status: 'loading', orders: [], message: '' })
+  const [state, setState] = useState({ status: 'loading', orders: [], received: 0, message: '' })
   // The checkout page can hand over a first line to show (an order placed to be paid in cash).
   const [notice, setNotice] = useState(() => location.state?.notice ?? null)
 
   useEffect(() => {
+    if (validateDays(fromDay, toDay)) return undefined
     let cancelled = false
-    getMyOrders()
+    getMyOrders(buildMyOrdersQuery({ filter, fromDay, toDay, page }))
       .then(({ data }) => {
-        if (!cancelled) setState({ status: 'ready', orders: newestFirst(Array.isArray(data) ? data : []), message: '' })
+        const orders = Array.isArray(data) ? data : []
+        if (!cancelled) setState({ status: 'ready', orders, received: orders.length, message: '' })
       })
       .catch((err) => {
-        if (!cancelled) setState({ status: 'error', orders: [], message: errorMessage(err, 'Không tải được đơn hàng, vui lòng thử lại.') })
+        if (!cancelled) setState({ status: 'error', orders: [], received: 0, message: errorMessage(err, 'Không tải được đơn hàng, vui lòng thử lại.') })
       })
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, filter, fromDay, toDay, page])
+
+  // Any change of the filters starts again from the first page.
+  function choose(setter) {
+    return (value) => {
+      setter(value)
+      setPage(0)
+      setState((current) => ({ ...current, status: 'loading' }))
+    }
+  }
+  const chooseFilter = choose(setFilter)
+  const chooseFromDay = choose(setFromDay)
+  const chooseToDay = choose(setToDay)
+
+  function goToPage(next) {
+    setPage(next)
+    setState((current) => ({ ...current, status: 'loading' }))
+  }
 
   const reload = useCallback(() => {
     setState((current) => ({ ...current, status: 'loading' }))
@@ -48,6 +71,8 @@ export default function MyOrdersPage() {
   }, [])
 
   const shown = searchMyOrders(filterMyOrders(state.orders, filter), search)
+  const daysProblem = validateDays(fromDay, toDay)
+  const filtered = filter !== 'ALL' || Boolean(fromDay) || Boolean(toDay) || page > 0
 
   return (
     <>
@@ -60,7 +85,7 @@ export default function MyOrdersPage() {
               type="button"
               role="tab"
               aria-selected={filter === entry.value}
-              onClick={() => setFilter(entry.value)}
+              onClick={() => chooseFilter(entry.value)}
               className={`text-sm rounded-full border px-4 py-1.5 ${filter === entry.value ? 'bg-brand text-white border-brand' : 'border-gray-300 text-gray-700 hover:border-brand'}`}
             >
               {entry.label}
@@ -87,6 +112,25 @@ export default function MyOrdersPage() {
           )}
         </div>
 
+        <div className="mt-4 flex flex-wrap items-end gap-3 text-sm text-gray-700">
+          <label className="flex flex-col gap-1">
+            Từ ngày
+            <input type="date" value={fromDay} max={toDay || undefined} onChange={(e) => chooseFromDay(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5" />
+          </label>
+          <label className="flex flex-col gap-1">
+            Đến ngày
+            <input type="date" value={toDay} min={fromDay || undefined} onChange={(e) => chooseToDay(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5" />
+          </label>
+          {(fromDay || toDay) && (
+            <button type="button" onClick={() => { chooseFromDay(''); setToDay('') }} className="text-sm underline text-gray-600 pb-2">
+              Xóa lọc ngày
+            </button>
+          )}
+        </div>
+        {daysProblem && <p role="alert" className="mt-2 text-sm text-red-600">{daysProblem}</p>}
+
         {notice && (
           <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-sm ${notice.kind === 'error' ? 'text-red-600' : 'text-green-700'}`}>
             {notice.text}
@@ -100,7 +144,10 @@ export default function MyOrdersPage() {
             <button type="button" onClick={reload} className="underline">Thử lại</button>
           </p>
         )}
-        {state.status === 'ready' && state.orders.length === 0 && (
+        {state.status === 'ready' && state.orders.length === 0 && filtered && (
+          <p className="mt-6 text-sm text-gray-500">Không có đơn nào khớp bộ lọc.</p>
+        )}
+        {state.status === 'ready' && state.orders.length === 0 && !filtered && (
           <p className="mt-6 text-sm text-gray-600">
             Bạn chưa có đơn hàng nào.{' '}
             <Link to="/products" className="underline text-gray-900">Xem sản phẩm</Link>
@@ -155,6 +202,20 @@ export default function MyOrdersPage() {
             )
           })}
         </ul>
+
+        {state.status === 'ready' && (page > 0 || hasNextPage(state.received)) && (
+          <nav aria-label="Phân trang" className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <button type="button" disabled={page === 0} onClick={() => goToPage(page - 1)}
+              className="border border-gray-300 rounded px-4 py-1.5 disabled:opacity-40">
+              Trang trước
+            </button>
+            <span aria-live="polite">Trang {page + 1}</span>
+            <button type="button" disabled={!hasNextPage(state.received)} onClick={() => goToPage(page + 1)}
+              className="border border-gray-300 rounded px-4 py-1.5 disabled:opacity-40">
+              Trang sau
+            </button>
+          </nav>
+        )}
       </div>
     </>
   )
