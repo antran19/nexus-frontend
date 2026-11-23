@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   buildOrderQuery, canRefund, canRequestReturn, endOfDay, filterStaffOrders, hasNextPage, isStaff, matchesSearch, newestFirst,
-  PAGE_SIZE, refundErrorMessage, refundNextStep, startOfDay, validateDays, removeReturn, replaceOrder, returnErrorMessage, validateReason,
+  PAGE_SIZE, refundDetails, refundErrorMessage, refundNextStep, startOfDay, validateDays, removeReturn, replaceOrder, returnErrorMessage, validateReason,
 } from './adminOrders.js'
 
 const orders = [
@@ -127,4 +127,20 @@ test('the first day may not come after the last day', () => {
   assert.equal(validateDays('2026-11-20', '2026-11-20'), '')
   assert.equal(validateDays('2026-11-20', ''), '')
   assert.equal(validateDays('', ''), '')
+})
+
+test('a refund reason is held to the 255 characters the server keeps', () => {
+  assert.equal(validateReason('a'.repeat(255), 255), '')
+  assert.match(validateReason('a'.repeat(256), 255), /tối đa 255/)
+  assert.equal(validateReason('a'.repeat(256)), '')
+})
+
+test('the refund details are shown only for a refunded order that has them', () => {
+  const refunded = { status: 'REFUNDED', refund: { reason: 'Hàng lỗi', refundedBy: 'support-9', refundedAt: '2026-11-20T10:00:00Z', stripeRefundId: 're_1' } }
+
+  assert.deepEqual(refundDetails(refunded), { reason: 'Hàng lỗi', by: 'support-9', at: '2026-11-20T10:00:00Z', stripeRefundId: 're_1' })
+  assert.equal(refundDetails({ status: 'REFUNDED', refund: null }), null)
+  assert.equal(refundDetails({ status: 'PAID', refund: refunded.refund }), null)
+  assert.equal(refundDetails(null), null)
+  assert.equal(refundDetails({ status: 'REFUNDED', refund: { reason: 'x', refundedAt: '2026-11-20T10:00:00Z' } }).stripeRefundId, '')
 })

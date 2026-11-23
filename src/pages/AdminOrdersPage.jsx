@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { errorMessage } from '../utils/apiError'
 import {
   buildOrderQuery, canRefund, canRequestReturn, filterStaffOrders, hasNextPage, isStaff, matchesSearch, PAYMENT_FILTERS,
-  refundErrorMessage, refundNextStep, replaceOrder, returnErrorMessage, STAFF_TABS, validateDays, validateReason,
+  MAX_REFUND_REASON_LENGTH, refundDetails, refundErrorMessage, refundNextStep, replaceOrder, returnErrorMessage, STAFF_TABS, validateDays, validateReason,
 } from '../utils/adminOrders'
 import { orderState } from '../utils/myOrders'
 import { addressLine } from '../utils/sellerOrders'
@@ -74,7 +74,7 @@ export default function AdminOrdersPage() {
   }, [])
 
   async function refund(order) {
-    const problem = validateReason(refunding?.reason)
+    const problem = validateReason(refunding?.reason, MAX_REFUND_REASON_LENGTH)
     if (problem) {
       setRefunding((current) => ({ ...current, error: problem }))
       return
@@ -252,6 +252,14 @@ export default function AdminOrdersPage() {
                 {order.paidAt && <p className="mt-1 text-xs text-gray-500">Đã thanh toán lúc {when(order.paidAt)}</p>}
                 {order.shippedAt && <p className="mt-1 text-xs text-green-700">Người bán đã giao lúc {when(order.shippedAt)}</p>}
                 {order.status === 'REFUNDED' && <p className="mt-1 text-sm text-gray-700">{refundNextStep(order)}</p>}
+                {refundDetails(order) && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Lý do hoàn tiền: {refundDetails(order).reason}
+                    {refundDetails(order).by && ` · bởi #${refundDetails(order).by.slice(0, 8)}`}
+                    {` · lúc ${when(refundDetails(order).at)}`}
+                    {refundDetails(order).stripeRefundId && ` · mã Stripe ${refundDetails(order).stripeRefundId}`}
+                  </p>
+                )}
 
                 {canRefund(order) && !open && (
                   <button
@@ -313,6 +321,7 @@ export default function AdminOrdersPage() {
                         <textarea
                           value={refunding.reason}
                           onChange={(e) => setRefunding((current) => ({ ...current, reason: e.target.value, error: '' }))}
+                          maxLength={MAX_REFUND_REASON_LENGTH + 20}
                           rows={2}
                           className="border border-gray-300 rounded px-3 py-2"
                           aria-invalid={Boolean(refunding.error)}

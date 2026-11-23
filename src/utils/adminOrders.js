@@ -6,6 +6,8 @@ import { endOfDay, PAGE_SIZE, startOfDay, withoutEmpty } from './orderQuery.js'
 export { endOfDay, hasNextPage, PAGE_SIZE, startOfDay, validateDays } from './orderQuery.js'
 
 export const MAX_REASON_LENGTH = 500
+// The server keeps a refund reason in 255 characters; longer is refused (after nothing was refunded).
+export const MAX_REFUND_REASON_LENGTH = 255
 
 // Admin and support staff see every order and handle refunds and returns; the server checks the privilege again.
 export function isStaff(user) {
@@ -64,11 +66,19 @@ export function canRequestReturn(order) {
 }
 
 // A message for the reason box, or '' when it can be sent. Both refund and return need a reason.
-export function validateReason(reason) {
+export function validateReason(reason, limit = MAX_REASON_LENGTH) {
   const text = String(reason ?? '').trim()
   if (!text) return 'Vui lòng nhập lý do.'
-  if (text.length > MAX_REASON_LENGTH) return `Lý do tối đa ${MAX_REASON_LENGTH} ký tự.`
+  if (text.length > limit) return `Lý do tối đa ${limit} ký tự.`
   return ''
+}
+
+// What the server remembers of a refund: why, who, when and Stripe's id of it. null for an order that is not refunded or
+// was refunded before this was kept (the buyer's page shows only the reason and the time, the staff page all of it).
+export function refundDetails(order) {
+  const refund = order?.refund
+  if (order?.status !== 'REFUNDED' || !refund?.refundedAt) return null
+  return { reason: refund.reason ?? '', by: refund.refundedBy ?? '', at: refund.refundedAt, stripeRefundId: refund.stripeRefundId ?? '' }
 }
 
 // What happens to the goods after a refund, so the staff knows whether there is a next step.

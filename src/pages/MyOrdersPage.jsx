@@ -6,6 +6,7 @@ import PageHero from '../components/PageHero'
 import ShipmentTracker from '../components/ShipmentTracker'
 import { errorMessage } from '../utils/apiError'
 import { canShowInvoice } from '../utils/invoice'
+import { refundDetails } from '../utils/adminOrders'
 import { buildMyOrdersQuery, filterMyOrders, ORDER_FILTERS, orderState, searchMyOrders } from '../utils/myOrders'
 import { hasNextPage, validateDays } from '../utils/orderQuery'
 import { PAYMENT_LABEL, paymentMethodOf } from '../utils/paymentMethod'
@@ -194,6 +195,11 @@ export default function MyOrdersPage() {
                 {order.paidAt && <p className="mt-1 text-xs text-gray-500">Đã thanh toán lúc {when(order.paidAt)}</p>}
                 {canShowInvoice(order) && (
                   <Link to={`/me/orders/${order.id}/invoice`} className="mt-2 inline-block text-sm text-brand underline">Xem hóa đơn</Link>
+                )}
+                {refundDetails(order) && (
+                  <p className="mt-2 text-sm text-red-700">
+                    Đã hoàn tiền lúc {when(refundDetails(order).at)}. Lý do: {refundDetails(order).reason}
+                  </p>
                 )}
                 <ShipmentTracker order={order} onChanged={changed} onNotice={setNotice} />
 
