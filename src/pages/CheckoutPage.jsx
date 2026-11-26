@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getCart } from '../api/cart'
 import { createCheckoutSession, setPaymentMethod, setShippingAddress, startCheckout } from '../api/orders'
 import PageHero from '../components/PageHero'
+import GhnShippingFields from '../components/GhnShippingFields'
 import { cartErrorMessage, errorMessage } from '../utils/apiError'
 import { CARD, CASH, paymentChoiceError } from '../utils/paymentMethod'
 
@@ -16,10 +17,14 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
   const [address, setAddress] = useState(EMPTY_ADDRESS)
+  const [shipping, setShipping] = useState({ ready: false, fields: {} })
   const [submitting, setSubmitting] = useState(false)
   const [errorText, setErrorText] = useState('')
   const [cartProblem, setCartProblem] = useState(false)
   const [method, setMethod] = useState(CARD)
+  const items = cart?.items ?? []
+  const isSingleSeller = items.length > 0 && Boolean(items[0].sellerId)
+    && items.every((item) => item.sellerId === items[0].sellerId)
 
   // One key for this visit to the page: a retry after a network error reuses it, so the server
   // hands back the same order instead of creating a second one.
@@ -52,6 +57,7 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (isSingleSeller && !shipping.ready) return
     setSubmitting(true)
     setErrorText('')
     setCartProblem(false)
@@ -60,7 +66,7 @@ export default function CheckoutPage() {
         const { data: order } = await startCheckout(idempotencyKey.current)
         orderId.current = order.id
       }
-      await setShippingAddress(orderId.current, address)
+      await setShippingAddress(orderId.current, { ...address, city: shipping.city ?? address.city, ...shipping.fields })
 
       if (method === CASH) {
         await setPaymentMethod(orderId.current, CASH)
@@ -112,7 +118,6 @@ export default function CheckoutPage() {
     )
   }
 
-  const items = cart?.items || []
 
   if (items.length === 0) {
     return (
@@ -184,12 +189,15 @@ export default function CheckoutPage() {
             Tỉnh / Thành phố
             <input
               className={inputClass}
-              value={address.city}
+              value={shipping.city ?? address.city}
+              readOnly={Boolean(shipping.city)}
               onChange={(e) => update('city', e.target.value)}
               maxLength={100}
               required
             />
           </label>
+          {isSingleSeller && <GhnShippingFields quantity={items.reduce((total, item) => total + item.quantity, 0)}
+            onChange={setShipping} inputClass={inputClass} />}
 
           <fieldset className="mt-2 flex flex-col gap-2">
             <legend className="text-sm font-medium text-cocoa">Phương thức thanh toán</legend>
@@ -209,7 +217,7 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (isSingleSeller && !shipping.ready)}
             className="mt-2 w-full py-3 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
             {submitting ? 'Đang xử lý...' : method === CASH ? 'Đặt hàng, trả tiền mặt khi nhận' : 'Thanh toán với Stripe'}
@@ -230,9 +238,15 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
+          {shipping.fields.quotedFee != null && <div className="mb-2 flex justify-between text-sm text-gray-600">
+            <span>Phí vận chuyển GHN</span>
+            <span>{Number(shipping.fields.quotedFee).toLocaleString('vi-VN')} đ</span>
+          </div>}
           <div className="flex justify-between items-baseline text-base font-bold text-cocoa">
             <span>Tổng</span>
-            <span className="font-display text-xl font-extrabold text-brand">{Number(cart?.totalAmount ?? 0).toLocaleString('vi-VN')} đ</span>
+            <span className="font-display text-xl font-extrabold text-brand">
+              {(Number(cart?.totalAmount ?? 0) + Number(shipping.fields.quotedFee ?? 0)).toLocaleString('vi-VN')} đ
+            </span>
           </div>
         </div>
       </div>

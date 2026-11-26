@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GhnShippingFields from './GhnShippingFields'
 import { cancelOrder, createCheckoutSession, setPaymentMethod, setShippingAddress } from '../api/orders'
 import {
   addressBody, addressFieldErrors, canCancel, canPay, EMPTY_ADDRESS, needsAddress, orderActionError, paymentUrls,
@@ -22,10 +23,15 @@ const STALE = ['ORDER_NOT_AWAITING_PAYMENT', 'ORDER_NOT_CANCELLABLE', 'ORDER_NOT
 export default function OrderActions({ order, onChanged, onStale, onNotice }) {
   const [mode, setMode] = useState('idle')
   const [address, setAddress] = useState(EMPTY_ADDRESS)
+  const [shipping, setShipping] = useState({ ready: false, fields: {} })
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
 
-  if (!canPay(order)) return null
+  const isSingleSeller = Boolean(order.items?.[0]?.sellerId)
+    && order.items.every((item) => item.sellerId === order.items[0].sellerId)
+  const supplementGhnAddress = isSingleSeller && order.status === 'PAID' && !order.shippedAt
+    && order.shippingAddress && !order.shippingAddress.districtId
+  if (!canPay(order) && !supplementGhnAddress) return null
 
   function fail(err, fallback) {
     const code = err?.response?.data?.error?.code
@@ -53,14 +59,22 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
 
   async function saveAddressAndPay(event) {
     event.preventDefault()
-    const found = validateAddress(address)
+    if ((isSingleSeller && !shipping.ready) || (supplementGhnAddress && !shipping.fields.districtId)) return
+    const destination = { ...address, city: shipping.city ?? address.city }
+    const found = validateAddress(destination)
     setErrors(found)
     if (Object.keys(found).length > 0) return
     setBusy(true)
     onNotice(null)
     try {
-      const { data: updated } = await setShippingAddress(order.id, addressBody(address))
+      const { data: updated } = await setShippingAddress(order.id, { ...addressBody(destination), ...shipping.fields })
       onChanged(updated)
+      if (supplementGhnAddress) {
+        setMode('idle')
+        setBusy(false)
+        onNotice({ kind: 'success', text: 'Đã bổ sung địa chỉ GHN cho đơn hàng.' })
+        return
+      }
       await startPayment()
     } catch (err) {
       const byField = addressFieldErrors(err)
@@ -116,7 +130,8 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
                 {label}
                 <input
                   type={type}
-                  value={address[name]}
+                  value={name === 'city' ? shipping.city ?? address[name] : address[name]}
+                  readOnly={name === 'city' && Boolean(shipping.city)}
                   maxLength={name === 'recipientName' ? 100 : undefined}
                   aria-invalid={Boolean(errors[name])}
                   onChange={(e) => setAddress((current) => ({ ...current, [name]: e.target.value }))}
@@ -126,9 +141,17 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
               </label>
             ))}
           </div>
+          {isSingleSeller && <GhnShippingFields quantity={order.items.reduce((total, item) => total + item.quantity, 0)}
+            onChange={setShipping} showFee={!supplementGhnAddress}
+            inputClass="w-full rounded border border-gray-300 bg-white px-2 py-2 text-sm" />}
+          {!supplementGhnAddress && shipping.fields.quotedFee != null && <p className="text-sm font-medium text-cocoa">
+            Tổng thanh toán {(Number(order.totalAmount) - Number(order.shippingAddress?.shippingFee ?? 0)
+              + Number(shipping.fields.quotedFee)).toLocaleString('vi-VN')} đ
+          </p>}
           <div className="mt-4 flex gap-2">
-            <button type="submit" className="bg-brand text-white rounded px-4 py-2 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
-              {busy ? 'Đang xử lý...' : 'Lưu địa chỉ và thanh toán'}
+            <button type="submit" disabled={(isSingleSeller && !shipping.ready) || (supplementGhnAddress && !shipping.fields.districtId)}
+              className="bg-brand text-white rounded px-4 py-2 text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
+              {busy ? 'Đang xử lý...' : supplementGhnAddress ? 'Lưu địa chỉ GHN' : 'Lưu địa chỉ và thanh toán'}
             </button>
             <button type="button" onClick={() => setMode('idle')} className="text-sm text-gray-600 px-3">Quay lại</button>
           </div>
@@ -154,6 +177,13 @@ export default function OrderActions({ order, onChanged, onStale, onNotice }) {
         <button type="button" disabled={busy} onClick={() => setMode('idle')} className="text-sm text-gray-600 px-2">Không hủy</button>
       </div>
     )
+  }
+
+  if (supplementGhnAddress) {
+    return <button type="button" className="mt-3 rounded border border-tray px-3 py-2 text-sm"
+      onClick={() => { setAddress(addressBody(order.shippingAddress)); setMode('address') }}>
+      Bổ sung địa chỉ GHN
+    </button>
   }
 
   const cash = isCash(order)
