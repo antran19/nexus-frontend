@@ -4,6 +4,7 @@ import { getMyOrders } from '../api/orders'
 import OrderActions from '../components/OrderActions'
 import PageHero from '../components/PageHero'
 import ShipmentTracker from '../components/ShipmentTracker'
+import RateSeller from '../components/auction/RateSeller'
 import { errorMessage } from '../utils/apiError'
 import { canShowInvoice } from '../utils/invoice'
 import { refundDetails } from '../utils/adminOrders'
@@ -202,6 +203,9 @@ export default function MyOrdersPage() {
                   </p>
                 )}
                 <ShipmentTracker order={order} onChanged={changed} onNotice={setNotice} />
+                {order.shipment?.status === 'RECEIVED' && order.items?.[0]?.sellerId
+                  && order.items.every((item) => item.sellerId === order.items[0].sellerId)
+                  && <RateSeller orderId={order.id} auctionId={order.auctionId} sellerId={order.items[0].sellerId} />}
 
                 <OrderActions order={order} onChanged={changed} onStale={reload} onNotice={setNotice} />
               </li>

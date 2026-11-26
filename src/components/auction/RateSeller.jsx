@@ -3,10 +3,8 @@ import { getAuction } from '../../api/auctions'
 import { rateTransaction } from '../../api/ratings'
 import { buildRatingBody, MAX_COMMENT_LENGTH, ratingErrorMessage, validateRating } from '../../utils/ratings'
 
-// "Đánh giá người bán" under an auction the person won. The seller's id is not in the "my auctions" list, so
-// it is read from the auction when the form is sent. The server accepts the rating only after the seller has
-// marked the deal as shipped, and only once; both cases come back as a sentence under the form.
-export default function RateSeller({ auctionId }) {
+// The bidding list looks up the seller when it does not already have the order's items.
+export default function RateSeller({ auctionId, orderId, sellerId }) {
   const [open, setOpen] = useState(false)
   const [score, setScore] = useState(0)
   const [comment, setComment] = useState('')
@@ -24,11 +22,11 @@ export default function RateSeller({ auctionId }) {
     setSending(true)
     setError('')
     try {
-      const { data: auction } = await getAuction(auctionId)
+      const ratedUserId = sellerId || (await getAuction(auctionId)).data.sellerId
       await rateTransaction({
-        ratedUserId: auction.sellerId,
-        transactionType: 'AUCTION',
-        transactionId: auctionId,
+        ratedUserId,
+        transactionType: auctionId ? 'AUCTION' : 'ORDER',
+        transactionId: auctionId || orderId,
         ...buildRatingBody({ score, comment }),
       })
       setDone('Cảm ơn bạn đã đánh giá người bán.')
@@ -74,11 +72,11 @@ export default function RateSeller({ auctionId }) {
             </button>
           ))}
         </div>
-        <label htmlFor={`rate-comment-${auctionId}`} className="mt-3 block text-xs text-gray-500">
+        <label htmlFor={`rate-comment-${orderId || auctionId}`} className="mt-3 block text-xs text-gray-500">
           Nhận xét (không bắt buộc)
         </label>
         <textarea
-          id={`rate-comment-${auctionId}`}
+          id={`rate-comment-${orderId || auctionId}`}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           maxLength={MAX_COMMENT_LENGTH}

@@ -35,6 +35,8 @@ export function ratingErrorMessage(err, fallback = 'Không gửi được đánh
   const code = err?.response?.data?.error?.code
   if (status === 401) return 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'
   switch (code) {
+    case 'ORDER_NOT_RECEIVED':
+      return 'Hãy xác nhận đã nhận hàng trước khi đánh giá người bán.'
     case 'TRANSACTION_NOT_FOUND':
       return 'Người bán chưa giao hàng nên chưa đánh giá được. Hãy quay lại sau khi hàng được giao.'
     case 'RATING_ALREADY_SUBMITTED':
