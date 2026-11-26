@@ -34,6 +34,7 @@ test('a won auction leads to its product, an outbid one to its auction', () => {
 test('events about an order lead to the order pages', () => {
   const payload = '{"auctionId":"a1","productId":"p1","orderId":"o1"}'
   assert.deepEqual(notificationTarget({ eventType: 'OrderShipped', payload }), { path: '/me/orders' })
+  assert.deepEqual(notificationTarget({ eventType: 'OrderCompleted', payload }), { path: '/me/orders' })
   assert.deepEqual(notificationTarget({ eventType: 'AuctionWon', payload }), { path: '/me/orders' })
   assert.deepEqual(notificationTarget({ eventType: 'AuctionSettled', payload }), { path: '/me/orders' })
   assert.deepEqual(notificationTarget({ eventType: 'AuctionPaymentTimeout', payload }), { path: '/me/orders' })

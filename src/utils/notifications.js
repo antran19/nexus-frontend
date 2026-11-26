@@ -40,6 +40,7 @@ export const ORDER_PAGE_BY_EVENT = {
   AuctionSettled: '/me/orders',
   AuctionPaymentTimeout: '/me/orders',
   OrderShipped: '/me/orders',
+  OrderCompleted: '/me/orders',
   OrderPaid: '/me/selling/orders',
 }
 
