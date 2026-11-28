@@ -1,5 +1,12 @@
 import { apiClient } from './client'
 
+const watchlistPath = '/api/v1/auctions/mine/watchlist'
+
+export const getWatchlist = (page) => apiClient.get(watchlistPath, { params: { page } })
+export const getWatchStatus = (auctionId) => apiClient.get(`${watchlistPath}/${auctionId}`)
+export const followAuction = (auctionId) => apiClient.put(`${watchlistPath}/${auctionId}`)
+export const unfollowAuction = (auctionId) => apiClient.delete(`${watchlistPath}/${auctionId}`)
+
 export function getAuctionsByProduct(productId) {
   return apiClient.get('/api/v1/auctions', { params: { productId } })
 }

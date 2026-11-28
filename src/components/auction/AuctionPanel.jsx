@@ -7,6 +7,7 @@ import { applyBid, bidLadder, endingSoon, mergeBid, myStanding, nextMinBid, time
 import { bidErrorMessage } from '../../utils/apiError'
 import { STANDING } from '../../utils/standing'
 import SellerReputation from './SellerReputation'
+import WatchAuctionButton from './WatchAuctionButton'
 import { useAuctionStream } from './useAuctionStream'
 
 const STATUS_LABEL = {
@@ -154,6 +155,9 @@ export default function AuctionPanel({ initial }) {
       </p>
 
       <SellerReputation sellerId={auction.sellerId} />
+      <div className="mt-3">
+        <WatchAuctionButton auctionId={auction.id} />
+      </div>
 
       {reserve && (
         <p

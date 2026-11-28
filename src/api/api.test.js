@@ -166,6 +166,10 @@ test('the auction calls', async () => {
     [() => a().getMyBidding(1, 10), 'get', '/api/v1/auctions/mine/bidding', [{ params: { page: 1, size: 10 } }]],
     [() => a().getMySelling({ status: 'ACTIVE', page: 0, size: 5 }), 'get', '/api/v1/auctions/mine/selling', [{ params: { status: 'ACTIVE', page: 0, size: 5 } }]],
     [() => a().getMySelling({ status: '', page: 0, size: 5 }), 'get', '/api/v1/auctions/mine/selling', [{ params: { status: undefined, page: 0, size: 5 } }]],
+    [() => a().getWatchlist(2), 'get', '/api/v1/auctions/mine/watchlist', [{ params: { page: 2 } }]],
+    [() => a().getWatchStatus('a1'), 'get', '/api/v1/auctions/mine/watchlist/a1', []],
+    [() => a().followAuction('a1'), 'put', '/api/v1/auctions/mine/watchlist/a1', []],
+    [() => a().unfollowAuction('a1'), 'delete', '/api/v1/auctions/mine/watchlist/a1', []],
   ]
   for (const [run, method, url, rest] of cases) {
     const call = await callOnce(run)

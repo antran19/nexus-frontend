@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { getAuctionsByProduct } from '../api/auctions'
+import { getAuction, getAuctionsByProduct } from '../api/auctions'
 import AuctionPanel from '../components/auction/AuctionPanel'
 import { addToCart } from '../api/cart'
 import { getProductById } from '../api/products'
@@ -13,6 +13,7 @@ import { productImages, SCENE_FALLBACKS } from '../utils/images'
 export default function ProductDetailPage() {
   const { id } = useParams()
   const location = useLocation()
+  const auctionId = new URLSearchParams(location.search).get('auction')
   const { isAuthenticated } = useAuth()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -39,6 +40,13 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     let cancelled = false
+    setAuction(null)
+    if (auctionId) {
+      getAuction(auctionId)
+        .then(({ data }) => { if (!cancelled && data.productId === id) setAuction(data) })
+        .catch(() => {})
+      return () => { cancelled = true }
+    }
     getAuctionsByProduct(id)
       .then(({ data: auctions }) => {
         if (!cancelled) setAuction(auctions.find((a) => a.status === 'ACTIVE') ?? auctions[0] ?? null)
@@ -47,7 +55,7 @@ export default function ProductDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, auctionId])
 
   async function handleAddToCart() {
     setAddingToCart(true)
