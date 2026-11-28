@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isTokenExpired, readStoredSession, returnPath, shouldEndSession, tokenExpiresAt } from './session.js'
+import { isTokenExpired, readStoredSession, retryPlan, returnPath, shouldEndSession, tokenExpiresAt } from './session.js'
 
 const NOW = Date.UTC(2026, 10, 15, 12, 0, 0)
 const b64 = (object) => Buffer.from(JSON.stringify(object)).toString('base64url')
@@ -27,6 +27,28 @@ test('the stored session keeps a good token and drops an expired one, rememberin
   assert.deepEqual(readStoredSession(null, NOW), { token: null, expired: false })
   assert.deepEqual(readStoredSession(valid, NOW), { token: valid, expired: false })
   assert.deepEqual(readStoredSession(expired, NOW), { token: null, expired: true })
+})
+
+test('an expired token is kept when a refresh token is kept too, so the first request can renew it', () => {
+  assert.deepEqual(readStoredSession(expired, NOW, true), { token: expired, expired: false })
+  assert.deepEqual(readStoredSession(expired, NOW, false), { token: null, expired: true })
+  assert.deepEqual(readStoredSession(valid, NOW, true), { token: valid, expired: false })
+  assert.deepEqual(readStoredSession(null, NOW, true), { token: null, expired: false })
+})
+
+test('a 401 on the current token is renewed, on an older token it is only sent again, and never twice', () => {
+  const failure = (status, header, extra = {}) => ({ response: { status }, config: { headers: { Authorization: header }, ...extra } })
+  assert.equal(retryPlan(failure(401, 'Bearer now'), 'now', 'refresh-token'), 'refresh')
+  assert.equal(retryPlan(failure(401, 'Bearer now'), 'now', null), null)
+  assert.equal(retryPlan(failure(401, 'Bearer older'), 'now', 'refresh-token'), 'retry')
+  assert.equal(retryPlan(failure(401, 'Bearer older'), 'now', null), 'retry')
+  // a request that was already sent a second time is final
+  assert.equal(retryPlan(failure(401, 'Bearer now', { _retried: true }), 'now', 'refresh-token'), null)
+  // not a 401, no token sent (a failed login), signed out, or not an answer at all
+  assert.equal(retryPlan(failure(403, 'Bearer now'), 'now', 'refresh-token'), null)
+  assert.equal(retryPlan(failure(401, undefined), 'now', 'refresh-token'), null)
+  assert.equal(retryPlan(failure(401, 'Bearer now'), null, 'refresh-token'), null)
+  assert.equal(retryPlan(new Error('network'), 'now', 'refresh-token'), null)
 })
 
 test('only a 401 on a request that carried the current token ends the session', () => {

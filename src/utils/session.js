@@ -17,10 +17,11 @@ export function isTokenExpired(token, now = Date.now()) {
 }
 
 // The token kept in the browser, and whether it had already run out (so the login page can say why the person is
-// asked to sign in again). An expired token is dropped.
-export function readStoredSession(stored, now = Date.now()) {
+// asked to sign in again). An expired token is dropped, unless a refresh token is kept too: then the first request
+// that gets a 401 trades it for a fresh access token and the person never notices.
+export function readStoredSession(stored, now = Date.now(), hasRefreshToken = false) {
   if (!stored) return { token: null, expired: false }
-  if (isTokenExpired(stored, now)) return { token: null, expired: true }
+  if (isTokenExpired(stored, now) && !hasRefreshToken) return { token: null, expired: true }
   return { token: stored, expired: false }
 }
 
@@ -30,6 +31,19 @@ export function readStoredSession(stored, now = Date.now()) {
 export function shouldEndSession(error, currentToken) {
   if (error?.response?.status !== 401 || !currentToken) return false
   return error.config?.headers?.Authorization === `Bearer ${currentToken}`
+}
+
+// What to do with a request that failed:
+//  - 'refresh': a 401 on the access token we hold now, so trade the refresh token for a new one and send it again;
+//  - 'retry': a 401 on an OLDER access token (the token was replaced while the request was on its way), so just send
+//    it again with the current one;
+//  - null: anything else, including a request already sent a second time (a second 401 is final).
+export function retryPlan(error, currentToken, refreshToken) {
+  if (error?.response?.status !== 401 || !currentToken || error.config?._retried) return null
+  const sent = error.config?.headers?.Authorization
+  if (!sent) return null
+  if (sent === `Bearer ${currentToken}`) return refreshToken ? 'refresh' : null
+  return 'retry'
 }
 
 // Where the login page sends the person back to: the page they were on, address and query together.

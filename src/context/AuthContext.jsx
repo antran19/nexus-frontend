@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { login as loginRequest } from '../api/auth'
-import { onSessionEnded } from '../api/client'
+import { login as loginRequest, logoutSession } from '../api/auth'
+import { onSessionEnded, onTokenRefreshed } from '../api/client'
 import { readStoredSession } from '../utils/session'
 
 const AuthContext = createContext(null)
@@ -15,7 +15,7 @@ function decodeJwtPayload(token) {
 
 export function AuthProvider({ children }) {
   // A token that already ran out is dropped at start, and the login page is told why.
-  const [initial] = useState(() => readStoredSession(localStorage.getItem('token')))
+  const [initial] = useState(() => readStoredSession(localStorage.getItem('token'), Date.now(), Boolean(localStorage.getItem('refreshToken'))))
   const [token, setToken] = useState(initial.token)
   const [sessionExpired, setSessionExpired] = useState(initial.expired)
   const [user, setUser] = useState(() => (initial.token ? decodeJwtPayload(initial.token) : null))
@@ -30,12 +30,16 @@ export function AuthProvider({ children }) {
     [],
   )
 
+  // The client swapped in a fresh access token behind the scenes (the old one ran out): follow it.
+  useEffect(() => onTokenRefreshed((fresh) => setToken(fresh)), [])
+
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token)
       setUser(decodeJwtPayload(token))
     } else {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       setUser(null)
     }
   }, [token])
@@ -43,10 +47,13 @@ export function AuthProvider({ children }) {
   async function login(credentials) {
     const { data } = await loginRequest(credentials)
     setSessionExpired(false)
+    localStorage.setItem('refreshToken', data.refreshToken)
     setToken(data.token)
   }
 
   function logout() {
+    // Tell the server first, so the tokens stop working there too, not only in this browser.
+    if (token) logoutSession({ token, refreshToken: localStorage.getItem('refreshToken') }).catch(() => {})
     setSessionExpired(false)
     setToken(null)
   }
