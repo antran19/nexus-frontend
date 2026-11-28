@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MyBiddingPage from './pages/MyBiddingPage'
 import AuctionWatchlistPage from './pages/AuctionWatchlistPage'
+import WishlistPage from './pages/WishlistPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
 import AdminCategoriesPage from './pages/AdminCategoriesPage'
 import AdminUsersPage from './pages/AdminUsersPage'
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="/me/dashboard" element={<BuyerDashboardPage />} />
               <Route path="/me/bidding" element={<MyBiddingPage />} />
               <Route path="/me/auction-watchlist" element={<AuctionWatchlistPage />} />
+              <Route path="/me/wishlist" element={<WishlistPage />} />
               <Route path="/me/orders" element={<MyOrdersPage />} />
               <Route path="/me/orders/:orderId/invoice" element={<InvoicePage />} />
               <Route path="/me/selling" element={<MySellingPage />} />

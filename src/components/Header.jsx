@@ -74,6 +74,7 @@ export default function Header() {
               Phiên của tôi
             </Link>
             <Link to="/me/auction-watchlist" className={linkClass}>Theo dõi</Link>
+            <Link to="/me/wishlist" className={linkClass}>Yêu thích</Link>
             <Link to="/me/orders" className={linkClass}>
               Đơn của tôi
             </Link>

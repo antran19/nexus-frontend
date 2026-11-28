@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getAuction, getAuctionsByProduct } from '../api/auctions'
 import AuctionPanel from '../components/auction/AuctionPanel'
+import WishlistButton from '../components/WishlistButton'
 import { addToCart } from '../api/cart'
 import { getProductById } from '../api/products'
 import { useAuth } from '../context/AuthContext'
@@ -128,6 +129,9 @@ export default function ProductDetailPage() {
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight text-cocoa">{product.name}</h1>
           <p className="text-gray-600 mt-3">{product.description}</p>
+          <div className="mt-4">
+            <WishlistButton productId={product.id} />
+          </div>
 
           {product.price != null && (
             <div className="mt-6 rounded-2xl border border-tray bg-white p-5 shadow-sm">

@@ -15,7 +15,7 @@ const api = {}
 before(async () => {
   server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom', logLevel: 'silent' })
   ;({ apiClient } = await server.ssrLoadModule('/src/api/client.js'))
-  for (const name of ['orders', 'auth', 'cart', 'auctions', 'products', 'categories', 'users', 'sellerRequests', 'ratings', 'notifications']) {
+  for (const name of ['orders', 'auth', 'cart', 'auctions', 'products', 'categories', 'users', 'sellerRequests', 'ratings', 'notifications', 'wishlist']) {
     api[name] = await server.ssrLoadModule(`/src/api/${name}.js`)
   }
   globalThis.window = new EventTarget() // the cart and checkout calls announce the change to the page
@@ -210,6 +210,21 @@ test('the product, category, user, seller request, rating and notification calls
   assert.deepEqual((await callOnce(() => api.users.updateMyProfile({ fullName: 'An', phone: '1', ignored: 1 }))).rest, [{ fullName: 'An', phone: '1' }])
   assert.deepEqual((await callOnce(() => api.notifications.getMyNotifications())).rest, [{ params: { unread: false, page: 0, size: 10 } }])
   assert.deepEqual((await callOnce(() => api.sellerRequests.listSellerRequests())).rest, [{ params: { status: 'PENDING' } }])
+})
+
+test('the wishlist calls', async () => {
+  const w = () => api.wishlist
+  const cases = [
+    [() => w().getWishlist(2, 10), 'get', '/api/v1/wishlist/me', [{ params: { page: 2, size: 10 } }]],
+    [() => w().getWishlist(), 'get', '/api/v1/wishlist/me', [{ params: { page: 0, size: 20 } }]],
+    [() => w().getWishlistStatus('p1'), 'get', '/api/v1/wishlist/p1', []],
+    [() => w().addToWishlist('p1'), 'put', '/api/v1/wishlist/p1', []],
+    [() => w().removeFromWishlist('p1'), 'delete', '/api/v1/wishlist/p1', []],
+  ]
+  for (const [run, method, url, rest] of cases) {
+    const call = await callOnce(run)
+    assert.deepEqual([call.method, call.url, call.rest], [method, url, rest])
+  }
 })
 
 test('the shared client adds the token to every request and hands over the payload without its envelope', async () => {
