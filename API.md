@@ -119,12 +119,40 @@ FE vẫn nên tự kiểm hai ô mật khẩu trước khi gửi để báo lỗ
 ```
 ```json
 // Response 200
-{ "success": true, "data": { "token": "<JWT>" } }
+{ "success": true, "data": { "token": "<JWT>", "refreshToken": "<chuỗi ngẫu nhiên>" } }
 ```
 Lỗi: `401` nếu sai email/mật khẩu (dùng chung lỗi xác thực, không nói rõ sai cái nào).
 
 Token JWT giải mã ra có `sub` = userId và `privileges` = mảng quyền — FE không cần tự đọc,
-chỉ cần đính kèm nguyên token vào header.
+chỉ cần đính kèm nguyên token vào header. Token này sống **1 giờ**. `refreshToken` sống **7 ngày** và dùng để lấy
+token mới (mục 2.2a) mà không bắt người dùng đăng nhập lại.
+
+### 2.2a. Làm mới token và đăng xuất
+
+`POST /api/v1/auth/refresh` — **không cần** đăng nhập (lúc gọi, token cũ thường đã hết hạn)
+
+```json
+// Request
+{ "refreshToken": "<refreshToken đang giữ>" }
+```
+```json
+// Response 200: một cặp mới. Thay CẢ HAI giá trị đang lưu.
+{ "success": true, "data": { "token": "<JWT mới>", "refreshToken": "<refreshToken mới>" } }
+```
+- Mỗi `refreshToken` **chỉ dùng được một lần**: dùng xong nó chết và phản hồi trả cái kế tiếp.
+- Token mới mang quyền và mức uy tín của người dùng **ở thời điểm làm mới**, không phải lúc đăng nhập.
+- `401 INVALID_REFRESH_TOKEN` cho mọi lý do từ chối (không có, hết hạn, đã dùng, đã thu hồi, tài khoản đã xóa),
+  không nói rõ lý do nào. Khi gặp lỗi này, FE xóa phiên và đưa người dùng về trang đăng nhập.
+- Nếu một `refreshToken` **đã dùng rồi** bị gửi lại thì coi như có bản sao bị lộ: server thu hồi **cả phiên đăng
+  nhập đó** (kể cả token mới nhất). Người dùng thật phải đăng nhập lại.
+- Đổi mật khẩu (2.3) hoặc đặt lại mật khẩu thu hồi **mọi** phiên của người dùng, trên mọi thiết bị.
+
+FE làm việc này trong `api/client.js`: khi một request nhận `401` vì token hết hạn thì tự đổi `refreshToken`
+lấy cặp mới rồi gửi lại request đó đúng một lần. Nhiều request hết hạn cùng lúc chỉ gây **một** lần làm mới.
+
+`POST /api/v1/auth/logout` — cần đăng nhập. Body tùy chọn `{ "refreshToken": "..." }`. Luôn thu hồi token đang dùng;
+có `refreshToken` thì kết thúc luôn phiên đó (các thiết bị khác của người dùng vẫn đăng nhập). Chỉ thu hồi được
+phiên của chính mình.
 
 ### 2.3. Đổi mật khẩu
 
@@ -374,7 +402,27 @@ token, FE **không** gửi field này lên.
 sản phẩm. Muốn người mua đặt được hàng thì tồn kho phải lớn hơn 0, nhập thêm ở mục 6.17.
 Response 201, sản phẩm mới luôn có `status: "DRAFT"` (chưa hiện công khai).
 
-### 4.5. Sửa sản phẩm / Đổi trạng thái / Xóa
+### 4.5. Sản phẩm yêu thích (Wishlist)
+
+Cần đăng nhập (kể cả `GET`). Mỗi người lưu một sản phẩm tối đa một lần.
+
+- `GET /api/v1/wishlist/me?page=0&size=20` — danh sách của tôi, **mới lưu trước**. `size` bị ép về 1 đến 50, `page`
+  âm thành 0.
+  ```json
+  { "success": true, "data": {
+      "items": [ { "productId": "...", "name": "...", "imageUrls": ["..."], "sellingPrice": 250000,
+                   "status": "ACTIVE", "available": true, "addedAt": "2026-11-20T10:00:00Z" } ],
+      "page": 0, "size": 20, "total": 1 } }
+  ```
+  `available` là `true` khi sản phẩm còn mua được (`status` = `ACTIVE`). Sản phẩm đã bán hoặc bị ẩn vẫn nằm trong
+  danh sách, chỉ có `available: false`.
+- `GET /api/v1/wishlist/{productId}` → `{ "data": { "saved": true } }` — để vẽ nút trái tim.
+- `PUT /api/v1/wishlist/{productId}` — lưu. Gọi lại cho sản phẩm đã lưu vẫn `200`. `404 PRODUCT_NOT_FOUND` nếu không có sản phẩm.
+- `DELETE /api/v1/wishlist/{productId}` — bỏ lưu. Bỏ sản phẩm chưa lưu cũng `200`.
+
+Xóa sản phẩm thì nó biến mất khỏi danh sách yêu thích của mọi người.
+
+### 4.6. Sửa sản phẩm / Đổi trạng thái / Xóa
 
 | | Method | Path | Quyền | Ghi chú |
 |---|---|---|---|---|
@@ -604,6 +652,21 @@ Các phiên mà người trong token đã từng đặt giá, phiên có lượt
 `myMaxAutoBid` là `null` nếu bạn chưa đặt mức tối đa ở phiên đó.
 
 `productName` là tên sản phẩm, lấy từ bản sao auction-service giữ theo sự kiện của catalog nên không cần gọi thêm `GET /products/{id}`. Nó là `null` với sản phẩm tạo trước khi có trường này, cho tới lần sản phẩm đó được đổi tên; khi đó FE hiển thị tên dự phòng hoặc tự gọi `GET /products/{id}`.
+
+### 5.10a. Theo dõi phiên đấu giá
+
+Cần đăng nhập. Khác với wishlist (sản phẩm), đây là theo dõi **một phiên đấu giá**.
+
+- `GET /api/v1/auctions/mine/watchlist?page=0` — các phiên tôi theo dõi, mới theo dõi trước, mỗi trang 20.
+  ```json
+  { "success": true, "data": { "hasNext": false, "items": [ {
+      "auctionId": "...", "productId": "...", "productName": "...", "status": "ACTIVE",
+      "price": 150000, "startTime": "...", "endTime": "...", "followedAt": "..." } ] } }
+  ```
+  `price` là giá hiện tại: giá chốt nếu đã kết thúc, nếu không thì giá cao nhất, nếu chưa ai trả thì giá khởi điểm.
+- `GET /api/v1/auctions/mine/watchlist/{auctionId}` → `{ "data": { "followed": true } }`
+- `PUT /api/v1/auctions/mine/watchlist/{auctionId}` — theo dõi. Lặp lại vẫn `200`; `404 AUCTION_NOT_FOUND` nếu phiên không có.
+- `DELETE /api/v1/auctions/mine/watchlist/{auctionId}` — bỏ theo dõi, luôn `204`.
 
 ### 5.11. Các phiên của tôi (người bán)
 
@@ -985,10 +1048,16 @@ Mỗi thông báo có `eventType` cho biết nó đến từ sự kiện nào, v
 | `AuctionPaymentTimeout` | người thắng | quá hạn thanh toán, giao dịch không còn hiệu lực |
 | `OrderPaid` | **người bán** | người mua đã thanh toán, hãy chuẩn bị giao hàng |
 | `OrderShipped` | **người mua** | đơn hàng đã được giao đi |
+| `OrderCompleted` | **người mua** | đơn đã hoàn tất, mời đánh giá người bán |
+| `OrderCancelled` | **người mua** | đơn bị hủy, kèm lý do (theo yêu cầu của bạn, quá hạn thanh toán, ...) |
+| `OrderRefunded` | **người mua** | đơn đã được hoàn tiền, kèm số tiền |
+| `AuctionFailed` | **người bán** | phiên kết thúc mà không có người thắng (không ai trả giá, hoặc chưa đạt giá sàn) |
+| `AuctionCancelled` | **người bán** | phiên bị quản trị viên hoặc hệ thống hủy (hết hàng trong kho) |
 | `PasswordResetRequested` | người yêu cầu | mã đặt lại mật khẩu |
 
-Phiên bị hủy, phiên kết thúc không có người mua và đơn bị hủy **chưa** có thông báo, vì các sự kiện đó không mang id người
-nhận.
+`AuctionCancelled` chỉ gửi khi **người khác** hủy: người bán tự hủy phiên của mình thì không nhận thông báo. Các sự kiện
+phát trước common-libs 1.19.0 không ghi người nhận nên không tạo thông báo.
+Những người đã đặt giá trong một phiên bị hủy **chưa** được báo, vì sự kiện hủy chưa mang danh sách người đặt giá.
 
 ### 7.2. Đánh dấu đã đọc
 
